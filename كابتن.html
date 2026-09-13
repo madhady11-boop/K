@@ -1340,6 +1340,9 @@ body.banner-on #toastContainer { top: calc(44px + var(--safe-t)); }
     <div class="glass hud hud-earn" id="todayHud">
       <span>💵 اليوم</span><b class="v mono" id="todayHudEarn">0</b>
     </div>
+    <div class="glass hud hidden" id="radarHud">
+      <span class="dot good"></span><span>📡 طلبات قريبة</span><b class="v mono" id="radarNearby">0</b>
+    </div>
     <div class="glass hud hidden" id="syncHud">
       <span class="dot mid"></span><span id="syncHudTxt">بانتظار المزامنة</span>
     </div>
@@ -3514,6 +3517,7 @@ const Radar = {
   updateNearbyHud(n) {
     State.radar.nearbyCount = n;
     const el = $('#radarNearby'); if (el) el.textContent = String(n);
+    $('#radarHud')?.classList.toggle('hidden', !State.ui.online);
     const badge = $('#navBadgeTrips');
     if (badge) { badge.textContent = String(n); badge.classList.toggle('hidden', !n || State.ui.view !== 'map'); }
     Bus.emit('radar:count', n);
