@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#070d1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>وصلني بطريقك ⚡ كابتن برو</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900;950&display=swap');
+:root {
+--bg: #070d1e;
+--bg-2: #0a1225;
+--card: #0f1a35;
+--card-2: #131f3e;
+--card-border: rgba(255, 255, 255, 0.12);
+--card-border-hover: rgba(255, 255, 255, 0.24);
+--primary: #2563eb;
+--primary-light: #3b82f6;
+--green: #10b981;
+--green-light: #34d399;
+--red: #ef4444;
+--amber: #f59e0b;
+--cyan: #38bdf8;
+--purple: #8b5cf6;
+--pink: #ec4899;
+--text: #f8fafc;
+--muted: #94a3b8;
+--muted-2: #64748b;
+--gradient-primary: linear-gradient(135deg, #2563eb, #1e40af);
+--gradient-green: linear-gradient(135deg, #10b981, #047857);
+--gradient-cyan: linear-gradient(135deg, #0284c7, #0369a1);
+--gradient-amber: linear-gradient(135deg, #f59e0b, #d97706);
+--gradient-purple: linear-gradient(135deg, #8b5cf6, #6d28d9);
+--gradient-danger: linear-gradient(135deg, #ef4444, #b91c1c);
+--shadow-sm: 0 4px 12px rgba(0,0,0,0.25);
+--shadow-md: 0 10px 28px rgba(0,0,0,0.35);
+--shadow-lg: 0 20px 50px rgba(0,0,0,0.5);
+--shadow-glow-primary: 0 8px 30px rgba(37, 99, 235, 0.45);
+--shadow-glow-green: 0 8px 30px rgba(16, 185, 129, 0.45);
+--radius-sm: 12px;
+--radius-md: 18px;
+--radius-lg: 26px;
+--radius-xl: 32px;
+--transition: cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-theme="light"] {
+--bg: #f1f5f9;
+--bg-2: #e2e8f0;
+--card: #ffffff;
+--card-2: #f8fafc;
+--card-border: rgba(15, 23, 42, 0.08);
+--card-border-hover: rgba(15, 23, 42, 0.18);
+--text: #0f172a;
+--muted: #64748b;
+--muted-2: #94a3b8;
+}
+￼ {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+-webkit-tap-highlight-color: transparent;
+user-select: none;
+}
+html, body {
+width: 100%;
+height: 100%;
+overflow: hidden;
+background: var(--bg);
+color: var(--text);
+overscroll-behavior: none;
+touch-action: manipulation;
+}
+button, input, select, textarea {
+font-family: inherit;
+outline: none;
+border: none;
+}
+input, select, textarea {
+user-select: text;
+-webkit-user-select: text;
+}
+#map {
+position: absolute;
+inset: 0;
+width: 100%;
+height: 100%;
+z-index: 1;
+background: #090f21;
+}
+#connBanner {
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+z-index: 9999999;
+padding: 6px 16px;
+font-size: 11.5px;
+font-weight: 900;
+text-align: center;
+transform: translateY(-100%);
+transition: transform 0.35s var(--transition);
+padding-top: calc(6px + env(safe-area-inset-top));
+}
+#connBanner.offline {
+transform: translateY(0);
+background: linear-gradient(135deg, #dc2626, #991b1b);
+color: #fff;
+}
+#connBanner.online-temp {
+transform: translateY(0);
+background: linear-gradient(135deg, #10b981, #047857);
+color: #fff;
+}
+#toastContainer {
+position: fixed;
+top: calc(16px + env(safe-area-inset-top));
+left: 50%;
+transform: translateX(-50%);
+z-index: 9999999;
+display: flex;
+flex-direction: column;
+gap: 8px;
+width: 92%;
+max-width: 380px;
+pointer-events: none;
+}
+.toast {
+background: rgba(15, 26, 53, 0.98);
+border: 1px solid var(--card-border);
+border-radius: var(--radius-md);
+padding: 13px 16px;
+font-size: 13px;
+font-weight: 800;
+color: #fff;
+box-shadow: var(--shadow-lg);
+backdrop-filter: blur(18px);
+display: flex;
+align-items: center;
+gap: 10px;
+animation: toastIn 0.35s var(--transition);
+}
+@keyframes toastIn {
+from { opacity: 0; transform: translateY(-14px) scale(0.96); }
+to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.toast.leaving {
+animation: toastOut 0.25s ease-out forwards;
+}
+@keyframes toastOut {
+to { opacity: 0; transform: translateY(-14px) scale(0.95); }
+}
+.toast.success { border-right: 4px solid var(--green); }
+.toast.danger { border-right: 4px solid var(--red); }
+.toast.warning { border-right: 4px solid var(--amber); }
+.toast.info { border-right: 4px solid var(--primary); }
+.toast-icon { font-size: 18px; flex-shrink: 0; }
+.top-navbar {
+position: absolute;
+top: calc(14px + env(safe-area-inset-top));
+left: 12px;
+right: 12px;
+z-index: 2000;
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+pointer-events: none;
+}
+.top-navbar > * { pointer-events: auto; }
+.glass-pill {
+background: rgba(15, 26, 53, 0.92);
+border: 1px solid var(--card-border);
+border-radius: 30px;
+backdrop-filter: blur(20px);
+box-shadow: var(--shadow-md);
+display: flex;
+align-items: center;
+gap: 9px;
+padding: 9px 15px;
+cursor: pointer;
+transition: all 0.2s var(--transition);
+}
+.glass-pill:active { transform: scale(0.96); }
+.status-indicator {
+width: 10px;
+height: 10px;
+border-radius: 50%;
+background: var(--muted);
+border: 2px solid #fff;
+transition: all 0.3s;
+}
+.status-indicator.online {
+background: var(--green);
+box-shadow: 0 0 12px var(--green);
+animation: pulseGlow 2s infinite;
+}
+@keyframes pulseGlow {
+0%, 100% { box-shadow: 0 0 8px var(--green); }
+50% { box-shadow: 0 0 18px var(--green), 0 0 28px rgba(16, 185, 129, 0.5); }
+}
+.zone-badge-btn {
+cursor: pointer;
+background: rgba(15, 26, 53, 0.92);
+border: 1px solid var(--card-border);
+border-radius: 24px;
+padding: 9px 14px;
+font-size: 12px;
+font-weight: 800;
+color: #fff;
+display: flex;
+align-items: center;
+gap: 6px;
+backdrop-filter: blur(20px);
+transition: all 0.2s var(--transition);
+}
+.zone-badge-btn:active { transform: scale(0.96); }
+.icon-btn-round {
+width: 40px;
+height: 40px;
+border-radius: 50%;
+background: rgba(15, 26, 53, 0.92);
+border: 1px solid var(--card-border);
+backdrop-filter: blur(20px);
+color: #fff;
+font-size: 16px;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.2s var(--transition);
+}
+.icon-btn-round:active { transform: scale(0.92); }
+.map-floating-actions {
+position: absolute;
+right: 14px;
+bottom: calc(105px + env(safe-area-inset-bottom));
+z-index: 2000;
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+.fab-btn {
+width: 50px;
+height: 50px;
+border-radius: 50%;
+background: var(--card);
+border: 1.5px solid var(--card-border);
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 20px;
+box-shadow: var(--shadow-md);
+cursor: pointer;
+transition: all 0.25s var(--transition);
+backdrop-filter: blur(14px);
+}
+.fab-btn:active { transform: scale(0.88); }
+.fab-btn.primary {
+background: var(--gradient-primary);
+border-color: #3b82f6;
+box-shadow: var(--shadow-glow-primary);
+}
+.speed-hud {
+position: absolute;
+top: calc(115px + env(safe-area-inset-top));
+left: 12px;
+z-index: 1900;
+background: rgba(15, 26, 53, 0.92);
+border: 1px solid var(--card-border);
+border-radius: var(--radius-sm);
+padding: 8px 12px;
+color: #fff;
+display: flex;
+flex-direction: column;
+align-items: center;
+backdrop-filter: blur(16px);
+min-width: 65px;
+}
+.speed-num { font-size: 18px; font-weight: 950; color: var(--cyan); line-height: 1; }
+.speed-lbl { font-size: 9.5px; color: var(--muted); font-weight: 800; }
+.bottom-bar {
+position: absolute;
+bottom: 0;
+left: 0;
+right: 0;
+z-index: 2500;
+background: rgba(10, 17, 36, 0.98);
+border-top: 1px solid var(--card-border);
+padding: 12px 16px calc(14px + env(safe-area-inset-bottom));
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 12px;
+backdrop-filter: blur(24px);
+}
+.main-online-btn {
+flex: 1;
+height: 54px;
+border-radius: 27px;
+background: #1e293b;
+color: var(--muted);
+border: 1.5px solid var(--card-border);
+font-size: 15px;
+font-weight: 900;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 10px;
+cursor: pointer;
+transition: all 0.3s var(--transition);
+position: relative;
+overflow: hidden;
+}
+.main-online-btn::before {
+content: '';
+position: absolute;
+inset: 0;
+background: var(--gradient-green);
+opacity: 0;
+transition: opacity 0.3s;
+}
+.main-online-btn.online {
+color: #fff;
+border-color: var(--green-light);
+box-shadow: var(--shadow-glow-green);
+}
+.main-online-btn.online::before { opacity: 1; }
+.main-online-btn > * { position: relative; z-index: 1; }
+.main-online-btn:active { transform: scale(0.97); }
+.category-mode-btn {
+height: 54px;
+padding: 0 18px;
+border-radius: 27px;
+background: var(--card);
+border: 1px solid var(--card-border);
+color: #cbd5e1;
+font-size: 12.5px;
+font-weight: 800;
+display: flex;
+align-items: center;
+gap: 6px;
+cursor: pointer;
+transition: all 0.25s var(--transition);
+}
+.category-mode-btn:active { transform: scale(0.96); }
+.category-mode-btn.shared-active {
+background: var(--gradient-purple);
+border-color: #c084fc;
+color: #fff;
+box-shadow: 0 8px 25px rgba(139, 92, 246, 0.45);
+}
+.incoming-order-sheet {
+position: absolute;
+bottom: 0;
+left: 0;
+right: 0;
+z-index: 4000;
+background: rgba(15, 26, 53, 0.99);
+border-top: 2px solid var(--primary);
+border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+padding: 18px 16px calc(22px + env(safe-area-inset-bottom));
+box-shadow: 0 -20px 60px rgba(0,0,0,0.7);
+display: none;
+flex-direction: column;
+gap: 13px;
+backdrop-filter: blur(24px);
+animation: slideUpOrder 0.35s var(--transition);
+}
+@keyframes slideUpOrder {
+from { transform: translateY(100%); opacity: 0.5; }
+to { transform: translateY(0); opacity: 1; }
+}
+.incoming-order-sheet.dismissing {
+animation: slideDown 0.28s ease-out forwards;
+}
+@keyframes slideDown {
+to { transform: translateY(100%); opacity: 0.5; }
+}
+.countdown-bar-wrap {
+width: 100%;
+height: 5px;
+background: rgba(255,255,255,0.08);
+border-radius: 6px;
+overflow: hidden;
+}
+.countdown-bar {
+height: 100%;
+background: linear-gradient(90deg, var(--primary), var(--cyan));
+width: 100%;
+border-radius: 6px;
+}
+.fare-display {
+font-size: 28px;
+font-weight: 950;
+color: var(--green-light);
+letter-spacing: -0.5px;
+line-height: 1;
+}
+.category-tag {
+padding: 5px 13px;
+border-radius: 12px;
+font-size: 11.5px;
+font-weight: 900;
+display: inline-flex;
+align-items: center;
+gap: 4px;
+white-space: nowrap;
+}
+.category-tag.eco { background: rgba(37, 99, 235, 0.20); color: #60a5fa; border: 1px solid #2563eb; }
+.category-tag.plus { background: rgba(245, 158, 11, 0.20); color: #fbbf24; border: 1px solid #f59e0b; }
+.category-tag.shared { background: rgba(139, 92, 246, 0.20); color: #c084fc; border: 1px solid #8b5cf6; }
+.route-preview-box {
+background: rgba(255, 255, 255, 0.04);
+border: 1px solid var(--card-border);
+border-radius: var(--radius-md);
+padding: 13px 15px;
+display: flex;
+flex-direction: column;
+gap: 11px;
+}
+.route-point {
+display: flex;
+align-items: flex-start;
+gap: 10px;
+font-size: 13px;
+}
+.route-point-icon {
+font-size: 16px;
+margin-top: 2px;
+flex-shrink: 0;
+}
+.active-trip-panel {
+position: absolute;
+bottom: 0;
+left: 0;
+right: 0;
+z-index: 3500;
+background: rgba(15, 26, 53, 0.98);
+border-top: 2px solid var(--cyan);
+border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+padding: 16px 16px calc(20px + env(safe-area-inset-bottom));
+box-shadow: 0 -20px 60px rgba(0,0,0,0.65);
+display: none;
+flex-direction: column;
+gap: 12px;
+backdrop-filter: blur(24px);
+animation: slideUpOrder 0.35s var(--transition);
+}
+.trip-navigation-bar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+background: rgba(255, 255, 255, 0.04);
+border: 1px solid var(--card-border);
+border-radius: var(--radius-md);
+padding: 13px 15px;
+gap: 10px;
+}
+.action-big-btn {
+width: 100%;
+height: 54px;
+border-radius: var(--radius-md);
+font-size: 15px;
+font-weight: 950;
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 8px;
+cursor: pointer;
+border: none;
+box-shadow: var(--shadow-md);
+transition: all 0.25s var(--transition);
+position: relative;
+overflow: hidden;
+}
+.action-big-btn:active { transform: scale(0.97); }
+.action-big-btn.to-pickup { background: var(--gradient-cyan); }
+.action-big-btn.at-door { background: var(--gradient-amber); }
+.action-big-btn.start-trip { background: var(--gradient-primary); }
+.action-big-btn.finish-trip { background: var(--gradient-green); box-shadow: var(--shadow-glow-green); }
+.shared-dock {
+position: absolute;
+bottom: calc(90px + env(safe-area-inset-bottom));
+left: 12px;
+right: 12px;
+z-index: 2800;
+background: rgba(15, 26, 53, 0.98);
+border: 1.5px solid var(--purple);
+border-radius: var(--radius-lg);
+padding: 15px;
+display: none;
+flex-direction: column;
+gap: 11px;
+box-shadow: var(--shadow-lg);
+backdrop-filter: blur(24px);
+max-height: 55vh;
+}
+.modal-backdrop {
+position: fixed;
+inset: 0;
+z-index: 99999;
+background: rgba(7, 11, 20, 0.85);
+backdrop-filter: blur(16px);
+display: none;
+align-items: center;
+justify-content: center;
+padding: 16px;
+animation: modalFadeIn 0.22s ease-out;
+}
+@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-box {
+background: var(--card);
+border: 1px solid var(--card-border);
+border-radius: var(--radius-lg);
+padding: 22px 18px;
+width: 100%;
+max-width: 400px;
+max-height: 90vh;
+overflow-y: auto;
+color: #fff;
+display: flex;
+flex-direction: column;
+gap: 14px;
+box-shadow: var(--shadow-lg);
+animation: modalPopIn 0.3s var(--transition);
+}
+@keyframes modalPopIn {
+from { transform: scale(0.92); opacity: 0; }
+to { transform: scale(1); opacity: 1; }
+}
+.nav-app-choice {
+display: flex;
+align-items: center;
+gap: 12px;
+padding: 14px;
+border-radius: var(--radius-md);
+background: rgba(255,255,255,0.06);
+border: 1px solid var(--card-border);
+cursor: pointer;
+color: #fff;
+font-size: 14px;
+font-weight: 800;
+text-decoration: none;
+transition: all 0.2s var(--transition);
+}
+.nav-app-choice:hover, .nav-app-choice:active {
+background: rgba(255,255,255,0.12);
+transform: translateX(-3px);
+}
+.stats-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 10px;
+}
+.stat-card {
+background: rgba(255,255,255,0.04);
+border: 1px solid var(--card-border);
+border-radius: var(--radius-md);
+padding: 14px;
+display: flex;
+flex-direction: column;
+gap: 5px;
+}
+.stat-card .label { font-size: 11px; color: var(--muted); font-weight: 700; }
+.stat-card .value { font-size: 22px; font-weight: 950; letter-spacing: -0.5px; line-height: 1.1; }
+.stat-card.blue .value { color: var(--primary-light); }
+.stat-card.green .value { color: var(--green-light); }
+.stat-card.amber .value { color: var(--amber); }
+.stat-card.purple .value { color: #c084fc; }
+.form-input {
+width: 100%;
+padding: 12px 14px;
+border-radius: var(--radius-sm);
+background: rgba(255,255,255,0.06);
+border: 1px solid var(--card-border);
+color: var(--text);
+font-size: 13.5px;
+font-weight: 700;
+transition: all 0.2s;
+}
+.form-input:focus {
+border-color: var(--primary);
+background: rgba(37, 99, 235, 0.08);
+box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.form-label {
+font-size: 11.5px;
+color: var(--muted);
+display: block;
+margin-bottom: 5px;
+font-weight: 800;
+}
+.gps-pill {
+position: absolute;
+top: calc(70px + env(safe-area-inset-top));
+left: 12px;
+z-index: 1900;
+background: rgba(15, 26, 53, 0.92);
+border: 1px solid var(--card-border);
+border-radius: 20px;
+padding: 6px 12px;
+font-size: 10.5px;
+font-weight: 800;
+color: #fff;
+display: flex;
+align-items: center;
+gap: 6px;
+backdrop-filter: blur(16px);
+}
+.gps-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+.gps-dot.weak { background: var(--amber); }
+.gps-dot.bad { background: var(--red); }
+.stat-chip {
+display: inline-flex;
+align-items: center;
+gap: 5px;
+padding: 4px 10px;
+border-radius: 12px;
+background: rgba(255,255,255,0.06);
+border: 1px solid var(--card-border);
+font-size: 11px;
+font-weight: 800;
+color: var(--muted);
+}
+</style>
+</head>
+<body>
+<div id="connBanner"></div>
+<div id="toastContainer"></div>
+<div id="map"></div>
+<div class="gps-pill" id="gpsPill" style="display:none;">
+<span class="gps-dot" id="gpsDot"></span>
+<span id="gpsText">GPS: --</span>
+</div>
+<div class="speed-hud" id="speedHud">
+<div class="speed-num" id="liveSpeedVal">0</div>
+<div class="speed-lbl">كم/ساعة</div>
+</div>
+<header class="top-navbar">
+<div class="glass-pill" onclick="openProfileModal()">
+<div class="status-indicator" id="navStatusIndicator"></div>
+<b style="font-size:13px; color:#fff;" id="topCaptainName">كابتن</b>
+<span style="font-size:11.5px; color:var(--amber);">⭐ <span id="topRating">5.0</span></span>
+</div>
+<div style="display:flex; gap:8px;">
+<button class="icon-btn-round" onclick="openStatsModal()" title="الإحصائيات">📊</button>
+<button class="zone-badge-btn" id="btnZoneSetup" onclick="openZoneModal()">
+<span>🗺️</span>
+<span id="lblZoneStatus">الكل</span>
+</button>
+</div>
+</header>
+<div class="map-floating-actions">
+<button class="fab-btn primary" onclick="recenterMap()" title="تمركز موقعي">🎯</button>
+<button class="fab-btn" id="btnFitActiveRoute" style="display:none;" onclick="fitActiveRouteBounds()" title="عرض المسار">🧭</button>
+<button class="fab-btn" id="btnToggleTheme" onclick="toggleTheme()" title="الوضع الليلي/النهاري">🌙</button>
+</div>
+<div class="shared-dock" id="sharedDock">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<b style="font-size:13.5px; color:#c084fc;">💺 ركاب العبرية على المسار</b>
+<span class="stat-chip" id="lblSharedSeatsCount">0 / 4</span>
+</div>
+<div id="sharedPassengersList" style="display:flex; flex-direction:column; gap:8px; overflow-y:auto; max-height:40vh;">
+<div style="text-align:center; font-size:11.5px; color:var(--muted); padding:12px;">🔍 الرادار يبحث عن ركاب على نفس مسارك...</div>
+</div>
+</div>
+<footer class="bottom-bar">
+<button class="category-mode-btn" id="btnModeShared" onclick="toggleSharedMode()">
+<span>💺</span>
+<span id="txtModeShared">وضع العبرية</span>
+</button>
+<button class="main-online-btn" id="btnToggleOnline" onclick="toggleOnline()">
+<span>⏻</span>
+<span id="lblOnlineText">بدء العمل</span>
+</button>
+</footer>
+<div class="incoming-order-sheet" id="incomingOrderSheet">
+<div class="countdown-bar-wrap">
+<div class="countdown-bar" id="countdownBar"></div>
+</div>
+<div style="display:flex; justify-content:space-between; align-items:flex-start;">
+<div>
+<span style="font-size:11px; color:var(--muted); font-weight:800;">أجرة المشوار المقررة</span>
+<div class="fare-display" id="inFare">0 د.ع</div>
+</div>
+<span class="category-tag eco" id="inCategoryTag">🚗 تكسي توفير</span>
+</div>
+<div class="route-preview-box">
+<div class="route-point">
+<span class="route-point-icon" style="color:#ff7100;">📍</span>
+<div>
+<span style="font-size:11px; color:var(--muted); display:block;">نقطة صعود الزبون:</span>
+<b id="inPickup" style="color:#fff;">-</b>
+</div>
+</div>
+<div class="route-point">
+<span class="route-point-icon" style="color:var(--cyan);">🏁</span>
+<div>
+<span style="font-size:11px; color:var(--muted); display:block;">وجهة النزول:</span>
+<b id="inDrop" style="color:#fff;">-</b>
+</div>
+</div>
+<div style="display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);">
+<span>المسافة: <b id="inDistance" style="color:#fff;">0</b> كم</span>
+<span>الزبون: <b id="inCustomerName" style="color:#fff;">-</b></span>
+</div>
+</div>
+<div style="display:flex; gap:10px;">
+<button style="flex:1; height:50px; border-radius:14px; background:rgba(255,255,255,0.08); color:#cbd5e1; font-weight:900; border:none; cursor:pointer; font-size:14px;" onclick="declineIncoming()">تخطي ✕</button>
+<button style="flex:2; height:50px; border-radius:14px; background:var(--gradient-primary); color:#fff; font-weight:950; border:none; cursor:pointer; font-size:14px; box-shadow: var(--shadow-glow-primary);" onclick="acceptIncoming()">قبول فوري ⚡</button>
+</div>
+</div>
+<div class="active-trip-panel" id="activeTripPanel">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<div>
+<span class="category-tag eco" id="actCategoryTag">🚗 تكسي توفير</span>
+<h3 id="actCustomerName" style="font-size:15px; font-weight:950; margin-top:3px;">-</h3>
+</div>
+<div class="fare-display" id="actFare" style="font-size:22px;">0 د.ع</div>
+</div>
+<div class="trip-navigation-bar">
+<div style="flex:1; min-width:0;">
+<div style="font-size:11px; color:var(--muted); font-weight:700;" id="lblTripPhaseStep">الهدف الحالي: التوجه للزبون</div>
+<b style="font-size:13px; color:#fff; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="lblTripPhaseAddress">-</b>
+</div>
+<div style="display:flex; gap:8px;">
+<a id="btnActCall" href="tel:" style="width:42px; height:42px; border-radius:12px; background:#0284c7; display:flex; align-items:center; justify-content:center; text-decoration:none; color:#fff; font-size:16px;">📞</a>
+<a id="btnActWa" href="https://wa.me/" target="_blank" style="width:42px; height:42px; border-radius:12px; background:#22c55e; display:flex; align-items:center; justify-content:center; text-decoration:none; color:#fff; font-size:16px;">💬</a>
+<button onclick="openNavigationChooserModal()" style="width:42px; height:42px; border-radius:12px; background:#8b5cf6; display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px; border:none; cursor:pointer;">🧭</button>
+</div>
+</div>
+<button class="action-big-btn to-pickup" id="btnTripStageAction" onclick="advanceTripStage()">
+<span>وصلت لموقع الزبون 📍</span>
+</button>
+</div>
+<div class="modal-backdrop" id="navModal">
+<div class="modal-box">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<h3 style="font-size:15px; font-weight:950;">🧭 اختر تطبيق الملاحة</h3>
+<button onclick="closeModal('navModal')" style="background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer;">✕</button>
+</div>
+<p style="font-size:12px; color:var(--muted);">اختر تطبيقك المفضل للتوجيه الصوتي خطوة بخطوة:</p>
+<div style="display:flex; flex-direction:column; gap:10px;">
+<div class="nav-app-choice" onclick="launchNavigationApp('google')">
+<span style="font-size:26px;">🗺️</span>
+<div>
+<b>خرائط جوجل (Google Maps)</b>
+<div style="font-size:11px; color:var(--muted);">توجيه سريع مع حالة المرور</div>
+</div>
+</div>
+<div class="nav-app-choice" onclick="launchNavigationApp('waze')">
+<span style="font-size:26px;">🚗</span>
+<div>
+<b>تطبيق ويز (Waze)</b>
+<div style="font-size:11px; color:var(--muted);">كشف ازدحامات وتنبيهات مباشرة</div>
+</div>
+</div>
+<div class="nav-app-choice" onclick="launchNavigationApp('yandex')">
+<span style="font-size:26px;">🧭</span>
+<div>
+<b>Yandex Navi</b>
+<div style="font-size:11px; color:var(--muted);">خرائط دقيقة ومناطق حديثة</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-backdrop" id="zoneModal">
+<div class="modal-box">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<h3 style="font-size:15px; font-weight:950;">🗺️ نطاق العمل الجغرافي</h3>
+<button onclick="closeModal('zoneModal')" style="background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer;">✕</button>
+</div>
+<p style="font-size:12px; color:var(--muted);">حدد أقصى مسافة لبُعد نقطة صعود الزبون عن موقعك الحالي.</p>
+<div>
+<label class="form-label">نطاق صعود الزبون:</label>
+<select id="selZoneRadius" class="form-input">
+<option value="0">بدون تحديد (كافة طلبات المدينة)</option>
+<option value="2">2 كم من موقعي</option>
+<option value="4" selected>4 كم من موقعي</option>
+<option value="7">7 كم من موقعي</option>
+<option value="12">12 كم من موقعي</option>
+<option value="20">20 كم من موقعي</option>
+</select>
+</div>
+<button onclick="saveZoneSettings()" style="padding:14px; border-radius:14px; background:var(--gradient-primary); color:#fff; font-weight:950; border:none; cursor:pointer; font-size:14px;">تطبيق النطاق ✓</button>
+</div>
+</div>
+<div class="modal-backdrop" id="profileModal">
+<div class="modal-box">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<h3 style="font-size:15px; font-weight:950;">⚙️ بيانات الكابتن</h3>
+<button onclick="closeModal('profileModal')" style="background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer;">✕</button>
+</div>
+<div style="background:linear-gradient(135deg, rgba(37,99,235,0.15), rgba(139,92,246,0.15)); border:1px solid var(--card-border); border-radius:16px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
+<div>
+<span style="font-size:11px; color:var(--muted);">رصيد المحفظة:</span>
+<h3 style="font-size:20px; color:var(--green-light); font-weight:950;" id="lblModalWallet">0 د.ع</h3>
+</div>
+<a href="https://wa.me/9647800000000" target="_blank" style="padding:8px 14px; border-radius:12px; background:#22c55e; color:#fff; text-decoration:none; font-size:11.5px; font-weight:900;">💳 شحن</a>
+</div>
+<div>
+<label class="form-label">اسم الكابتن</label>
+<input type="text" id="inCapName" class="form-input">
+</div>
+<div>
+<label class="form-label">نوع وموديل المركبة</label>
+<input type="text" id="inCapCar" class="form-input">
+</div>
+<div>
+<label class="form-label">رقم اللوحة</label>
+<input type="text" id="inCapPlate" class="form-input">
+</div>
+<button onclick="saveCaptainProfile()" style="padding:14px; border-radius:14px; background:var(--gradient-primary); color:#fff; font-weight:950; border:none; cursor:pointer; font-size:14px;">حفظ ✓</button>
+<button onclick="logoutCaptain()" style="padding:12px; border-radius:12px; background:rgba(239,68,68,0.15); color:#fca5a5; font-weight:900; border:1px solid rgba(239,68,68,0.3); cursor:pointer; font-size:13px;">تسجيل الخروج 🚪</button>
+</div>
+</div>
+<div class="modal-backdrop" id="statsModal">
+<div class="modal-box">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<h3 style="font-size:15px; font-weight:950;">📊 لوحة الإحصائيات</h3>
+<button onclick="closeModal('statsModal')" style="background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer;">✕</button>
+</div>
+<div style="background:linear-gradient(135deg, rgba(16,185,129,0.15), rgba(37,99,235,0.15)); border:1px solid var(--card-border); border-radius:16px; padding:16px; text-align:center;">
+<span style="font-size:11.5px; color:var(--muted); font-weight:800;">أرباح اليوم</span>
+<div style="font-size:34px; font-weight:950; color:var(--green-light); letter-spacing:-1px; line-height:1.1;" id="statTodayEarnings">0</div>
+<span style="font-size:11px; color:var(--muted);">دينار عراقي</span>
+</div>
+<div class="stats-grid">
+<div class="stat-card blue">
+<span class="label">رحلات اليوم</span>
+<span class="value" id="statTodayTrips">0</span>
+</div>
+<div class="stat-card purple">
+<span class="label">تقييمك</span>
+<span class="value" id="statRating">5.0</span>
+</div>
+<div class="stat-card green">
+<span class="label">أرباح الأسبوع</span>
+<span class="value" id="statWeekEarnings" style="font-size:16px;">0</span>
+</div>
+<div class="stat-card amber">
+<span class="label">أرباح الشهر</span>
+<span class="value" id="statMonthEarnings" style="font-size:16px;">0</span>
+</div>
+</div>
+<div style="background:rgba(255,255,255,0.04); border:1px solid var(--card-border); border-radius:16px; padding:14px;">
+<div style="font-size:12px; font-weight:900; color:#cbd5e1; margin-bottom:10px;">📅 آخر 7 أيام</div>
+<div id="chartContainer" style="display:flex; align-items:flex-end; gap:6px; height:80px; padding:4px 0;"></div>
+</div>
+</div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+getFirestore, collection, query, where, onSnapshot, doc, updateDoc, setDoc,
+runTransaction, serverTimestamp, getDocs
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+const firebaseConfig = {
+apiKey: "AIzaSyDOUbHXIDwnEslmhwb2f_Jo83XpmpLVzFY",
+authDomain: "tixe-4d8ac.firebaseapp.com",
+databaseURL: "https://tixe-4d8ac-default-rtdb.asia-southeast1.firebasedatabase.app",
+projectId: "tixe-4d8ac",
+storageBucket: "tixe-4d8ac.firebasestorage.app",
+messagingSenderId: "1009320674344",
+appId: "1:1009320674344:web:5b509fa96d12be29e1a11d"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let capSession = JSON.parse(localStorage.getItem('cap_session') || 'null');
+if (!capSession) {
+capSession = {
+phone: "07800000001",
+name: "كابتن سجاد علي",
+carModel: "هيونداي إلنترا 2023",
+carPlate: "ذي قار 48921 أجرة",
+walletBalance: 25000,
+rating: 5.0,
+zoneRadiusKm: 4,
+totalTrips: 0,
+todayEarnings: 0,
+todayTrips: 0,
+weekEarnings: 0,
+monthEarnings: 0,
+lastResetDate: new Date().toDateString()
+};
+localStorage.setItem('cap_session', JSON.stringify(capSession));
+}
+let isOnline = false;
+let isSharedMode = false;
+let currentIncomingTrip = null;
+let activeTrip = null;
+let activeSharedPassengers = [];
+let orderTimeoutTimer = null;
+let ordersUnsub = null;
+let captainCoords = { lat: 31.0450, lng: 46.2570 };
+let carMarker = null;
+let zoneCircleLayer = null;
+let carMarkerRotation = 0;
+let previewPolyline = null;
+let previewMarkers = [];
+let activePolyline = null;
+let activeMarkers = [];
+let currentGpsAccuracy = null;
+let liveSyncInterval = null;
+function haptic(pattern = 'light') {
+if (!navigator.vibrate) return;
+const patterns = {
+light: [10],
+medium: [25],
+heavy: [50],
+success: [30, 40, 80],
+error: [60, 50, 60],
+double: [20, 60, 20],
+long: [100]
+};
+try { navigator.vibrate(patterns[pattern] || patterns.light); } catch(e) {}
+}
+let audioCtx = null;
+function initAudio() {
+if (!audioCtx) {
+try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+}
+if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+return audioCtx;
+}
+function playTone(freq, duration = 0.15, type = 'sine', volume = 0.3) {
+const ctx = initAudio();
+if (!ctx) return;
+const osc = ctx.createOscillator();
+const gain = ctx.createGain();
+osc.connect(gain);
+gain.connect(ctx.destination);
+osc.type = type;
+osc.frequency.setValueAtTime(freq, ctx.currentTime);
+gain.gain.setValueAtTime(volume, ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+osc.start();
+osc.stop(ctx.currentTime + duration);
+}
+function playAlertChime() {
+playTone(659.25, 0.18, 'sine', 0.4);
+setTimeout(() => playTone(880, 0.22, 'sine', 0.35), 150);
+setTimeout(() => playTone(1174.66, 0.3, 'sine', 0.3), 320);
+}
+function playSuccessSound() {
+playTone(523.25, 0.12, 'sine', 0.3);
+setTimeout(() => playTone(783.99, 0.22, 'sine', 0.3), 100);
+}
+function playErrorSound() {
+playTone(220, 0.2, 'square', 0.25);
+setTimeout(() => playTone(165, 0.3, 'square', 0.25), 150);
+}
+const toastQueue = [];
+let activeToasts = 0;
+const MAX_TOASTS = 3;
+function showToast(msg, type = "info", icon = null) {
+const icons = { success: '✓', danger: '✕', warning: '⚠', info: 'ℹ' };
+toastQueue.push({ msg, type, icon: icon || icons[type] || 'ℹ' });
+processToastQueue();
+}
+function processToastQueue() {
+if (activeToasts >= MAX_TOASTS || !toastQueue.length) return;
+const { msg, type, icon } = toastQueue.shift();
+activeToasts++;
+const container = document.getElementById("toastContainer");
+const el = document.createElement("div");
+el.className = ⁠toast ${type}⁠;
+el.innerHTML = ⁠<span class="toast-icon">${icon}</span><span>${msg}</span>⁠;
+container.appendChild(el);
+haptic(type === 'danger' ? 'error' : type === 'success' ? 'success' : 'light');
+setTimeout(() => {
+el.classList.add('leaving');
+setTimeout(() => {
+el.remove();
+activeToasts--;
+processToastQueue();
+}, 250);
+}, 3000);
+}
+function calcDistanceKm(lat1, lon1, lat2, lon2) {
+const R = 6371;
+const dLat = (lat2 - lat1) * Math.PI / 180;
+const dLon = (lon2 - lon1) * Math.PI / 180;
+const a = Math.sin(dLat/2)**2 +
+Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2)**2;
+return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function calcBearing(lat1, lon1, lat2, lon2) {
+const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
+const Δλ = (lon2-lon1) * Math.PI/180;
+const y = Math.sin(Δλ) * Math.cos(φ2);
+const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+return (Math.atan2(y, x) * 180/Math.PI + 360) % 360;
+}
+const map = L.map("map", { zoomControl: false, preferCanvas: true })
+.setView([captainCoords.lat, captainCoords.lng], 15);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+maxZoom: 19,
+attribution: ''
+}).addTo(map);
+function createCarIcon(bearing = 0) {
+return L.divIcon({
+className: "",
+html: ⁠<div style="width:42px;height:42px;background:linear-gradient(135deg,#fff,#e2e8f0);border-radius:50%;border:3px solid #2563eb;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 8px 24px rgba(37,99,235,0.5);transform:rotate(${bearing}deg);transition:transform 0.4s ease;">🚕</div>⁠,
+iconSize: [42, 42],
+iconAnchor: [21, 21]
+});
+}
+function createPinIcon(text, color, symbol) {
+return L.divIcon({
+className: "",
+html: ⁠<div style="position:relative;display:flex;flex-direction:column;align-items:center;width:44px;height:60px;"> <div style="position:absolute;bottom:38px;white-space:nowrap;background:#0f1a35;color:#fff;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:900;border:1.5px solid ${color};box-shadow:0 4px 14px rgba(0,0,0,0.5);"> <span>${symbol}</span> <span>${text}</span> </div> <div style="width:30px;height:30px;background:${color};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 6px 18px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;"> <div style="width:8px;height:8px;background:#fff;border-radius:50%;"></div> </div> </div>⁠,
+iconSize: [44, 60],
+iconAnchor: [22, 60]
+});
+}
+function loadTheme() {
+const theme = localStorage.getItem('cap_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', theme);
+updateThemeIcon();
+}
+function toggleTheme() {
+const current = document.documentElement.getAttribute('data-theme') || 'dark';
+const next = current === 'dark' ? 'light' : 'dark';
+document.documentElement.setAttribute('data-theme', next);
+localStorage.setItem('cap_theme', next);
+updateThemeIcon();
+haptic('light');
+}
+function updateThemeIcon() {
+const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+const btn = document.getElementById('btnToggleTheme');
+if (btn) btn.innerText = theme === 'dark' ? '☀️' : '🌙';
+}
+function monitorConnection() {
+const banner = document.getElementById('connBanner');
+const update = () => {
+if (!navigator.onLine) {
+banner.classList.add('offline');
+banner.classList.remove('online-temp');
+banner.innerText = '⚠ لا يوجد اتصال بالإنترنت — جاري إعادة المحاولة...';
+} else {
+banner.classList.remove('offline');
+banner.classList.add('online-temp');
+banner.innerText = '✓ تم استعادة الاتصال';
+setTimeout(() => banner.classList.remove('online-temp'), 2000);
+}
+};
+window.addEventListener('online', update);
+window.addEventListener('offline', update);
+update();
+}
+window.addEventListener("load", () => {
+loadTheme();
+monitorConnection();
+resetDailyStats();
+renderHeader();
+initGPS();
+drawZoneCircle();
+listenCaptainDoc();
+});
+function resetDailyStats() {
+const today = new Date().toDateString();
+if (capSession.lastResetDate !== today) {
+capSession.todayEarnings = 0;
+capSession.todayTrips = 0;
+capSession.lastResetDate = today;
+localStorage.setItem('cap_session', JSON.stringify(capSession));
+}
+}
+function renderHeader() {
+document.getElementById("topCaptainName").innerText = capSession.name?.split(' ').slice(0,2).join(' ') || "الكابتن";
+document.getElementById("topRating").innerText = Number(capSession.rating || 5.0).toFixed(1);
+const radius = Number(capSession.zoneRadiusKm || 0);
+document.getElementById("lblZoneStatus").innerText = radius > 0 ? ⁠${radius} كم⁠ : "الكل";
+}
+function listenCaptainDoc() {
+if (!capSession?.phone) return;
+onSnapshot(doc(db, "captains", capSession.phone), snap => {
+if (!snap.exists()) return;
+capSession = { ...capSession, ...snap.data() };
+localStorage.setItem("cap_session", JSON.stringify(capSession));
+renderHeader();
+});
+}
+function initGPS() {
+if (!navigator.geolocation) return;
+const gpsPill = document.getElementById('gpsPill');
+gpsPill.style.display = 'flex';
+let lastLatLng = null;
+navigator.geolocation.watchPosition(
+p => {
+const newCoords = { lat: p.coords.latitude, lng: p.coords.longitude };
+currentGpsAccuracy = p.coords.accuracy;
+if (p.coords.speed !== null && !isNaN(p.coords.speed)) {
+const speedKmh = Math.max(0, Math.round(p.coords.speed * 3.6));
+document.getElementById("liveSpeedVal").innerText = speedKmh;
+}
+let bearing = 0;
+if (lastLatLng) {
+const dist = calcDistanceKm(lastLatLng.lat, lastLatLng.lng, newCoords.lat, newCoords.lng);
+if (dist > 0.003) {
+bearing = calcBearing(lastLatLng.lat, lastLatLng.lng, newCoords.lat, newCoords.lng);
+carMarkerRotation = bearing;
+}
+}
+lastLatLng = newCoords;
+captainCoords = newCoords;
+if (!carMarker) {
+carMarker = L.marker([captainCoords.lat, captainCoords.lng], { icon: createCarIcon(0) }).addTo(map);
+} else {
+carMarker.setLatLng([captainCoords.lat, captainCoords.lng]);
+carMarker.setIcon(createCarIcon(carMarkerRotation));
+}
+if (zoneCircleLayer) zoneCircleLayer.setLatLng([captainCoords.lat, captainCoords.lng]);
+const acc = p.coords.accuracy;
+const dot = document.getElementById('gpsDot');
+const txt = document.getElementById('gpsText');
+dot.classList.remove('weak', 'bad');
+if (acc <= 15) { txt.innerText = ⁠GPS: ممتاز (±${acc.toFixed(0)}م)⁠; }
+else if (acc <= 40) { dot.classList.add('weak'); txt.innerText = ⁠GPS: جيد (±${acc.toFixed(0)}م)⁠; }
+else { dot.classList.add('bad'); txt.innerText = ⁠GPS: ضعيف (±${acc.toFixed(0)}م)⁠; }
+},
+err => {
+document.getElementById('gpsText').innerText = 'GPS: غير متاح';
+document.getElementById('gpsDot').classList.add('bad');
+},
+{ enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
+);
+liveSyncInterval = setInterval(async () => {
+if (!isOnline || !capSession?.phone) return;
+try {
+await updateDoc(doc(db, "captains", capSession.phone), {
+lat: captainCoords.lat,
+lng: captainCoords.lng,
+heading: carMarkerRotation,
+lastSeen: serverTimestamp()
+});
+if (activeTrip?.id) {
+await updateDoc(doc(db, "trips", activeTrip.id), {
+captainCoords: { lat: captainCoords.lat, lng: captainCoords.lng, heading: carMarkerRotation }
+});
+}
+} catch(e) {}
+}, 4000);
+}
+window.recenterMap = () => {
+map.setView([captainCoords.lat, captainCoords.lng], 16, { animate: true });
+haptic('light');
+};
+function drawZoneCircle() {
+if (zoneCircleLayer) { map.removeLayer(zoneCircleLayer); zoneCircleLayer = null; }
+const radiusKm = Number(capSession.zoneRadiusKm || 0);
+if (radiusKm > 0) {
+zoneCircleLayer = L.circle([captainCoords.lat, captainCoords.lng], {
+radius: radiusKm * 1000,
+color: "#38bdf8",
+weight: 2,
+dashArray: '6, 8',
+fillColor: "#0284c7",
+fillOpacity: 0.08
+}).addTo(map);
+}
+}
+window.toggleOnline = () => {
+isOnline = !isOnline;
+const btn = document.getElementById("btnToggleOnline");
+const dot = document.getElementById("navStatusIndicator");
+const txt = document.getElementById("lblOnlineText");
+btn.classList.toggle("online", isOnline);
+dot.classList.toggle("online", isOnline);
+txt.innerText = isOnline ? "الرادار يعمل ✓" : "بدء العمل";
+if (isOnline) {
+playSuccessSound();
+startOrderRadar();
+setDoc(doc(db, "captains", capSession.phone), {
+isOnline: true,
+lat: captainCoords.lat,
+lng: captainCoords.lng,
+lastSeen: serverTimestamp()
+}, { merge: true }).catch(() => {});
+showToast("⚡ الرادار متصل ويستمع للطلبات فوراً", "success");
+} else {
+if (ordersUnsub) { ordersUnsub(); ordersUnsub = null; }
+declineIncoming();
+setDoc(doc(db, "captains", capSession.phone), { isOnline: false }, { merge: true }).catch(() => {});
+showToast("تم إيقاف الرادار", "info");
+}
+haptic('medium');
+};
+window.toggleSharedMode = () => {
+isSharedMode = !isSharedMode;
+const btn = document.getElementById("btnModeShared");
+const dock = document.getElementById("sharedDock");
+btn.classList.toggle("shared-active", isSharedMode);
+document.getElementById("txtModeShared").innerText = isSharedMode ? "العبرية ✓" : "وضع العبرية";
+dock.style.display = isSharedMode ? "flex" : "none";
+if (isSharedMode) {
+if (!isOnline) toggleOnline();
+updateSharedDeck();
+showToast("تم تفعيل وضع كراسي العبرية (حتى 4 ركاب) 💺", "success");
+} else {
+showToast("العودة لوضع التاكسي الخاص", "info");
+}
+haptic('medium');
+};
+function startOrderRadar() {
+if (ordersUnsub) ordersUnsub();
+const q = query(collection(db, "trips"), where("status", "==", "searching"));
+ordersUnsub = onSnapshot(q, snap => {
+if (!isOnline || currentIncomingTrip || activeTrip) return;
+snap.docs.forEach(d => {
+if (currentIncomingTrip || activeTrip) return;
+const trip = { id: d.id, ...d.data() };
+const isSharedTrip = trip.isSharedSeat || (trip.category && trip.category.includes("عبرية"));
+const radiusKm = Number(capSession.zoneRadiusKm || 0);
+if (radiusKm > 0 && trip.pickup?.lat) {
+const dist = calcDistanceKm(captainCoords.lat, captainCoords.lng, trip.pickup.lat, trip.pickup.lng);
+if (dist > radiusKm) return;
+}
+if (isSharedMode && isSharedTrip && activeSharedPassengers.length < 4) {
+presentIncomingTrip(trip);
+} else if (!isSharedMode && !isSharedTrip && !activeSharedPassengers.length) {
+presentIncomingTrip(trip);
+}
+});
+});
+}
+function presentIncomingTrip(trip) {
+currentIncomingTrip = trip;
+playAlertChime();
+haptic('double');
+document.getElementById("inFare").innerText = ⁠${Number(trip.fare || 2500).toLocaleString()} د.ع⁠;
+document.getElementById("inPickup").innerText = trip.pickup?.address || "نقطة صعود";
+document.getElementById("inDrop").innerText = trip.dropoff?.address || "الوجهة";
+document.getElementById("inDistance").innerText = trip.distanceKm || "3.5";
+document.getElementById("inCustomerName").innerText = trip.userName?.split(' ')[0] || "الزبون";
+const catTag = document.getElementById("inCategoryTag");
+catTag.className = "category-tag";
+if (trip.isSharedSeat || (trip.category && trip.category.includes("عبرية"))) {
+catTag.innerText = "💺 عبرية (كرسي)";
+catTag.classList.add("shared");
+} else if (trip.category && trip.category.includes("بلس")) {
+catTag.innerText = "⭐ بلس";
+catTag.classList.add("plus");
+} else {
+catTag.innerText = "🚗 توفير";
+catTag.classList.add("eco");
+}
+drawPreviewRoute(trip);
+document.getElementById("incomingOrderSheet").style.display = "flex";
+document.getElementById("incomingOrderSheet").classList.remove("dismissing");
+const bar = document.getElementById("countdownBar");
+bar.style.transition = "none";
+bar.style.width = "100%";
+setTimeout(() => {
+bar.style.transition = "width 15s linear";
+bar.style.width = "0%";
+}, 40);
+clearTimeout(orderTimeoutTimer);
+orderTimeoutTimer = setTimeout(() => {
+if (currentIncomingTrip) declineIncoming();
+}, 15000);
+}
+async function drawPreviewRoute(trip) {
+clearPreviewRoute();
+if (!trip.pickup?.lat || !trip.dropoff?.lat) return;
+const pMarker = L.marker([trip.pickup.lat, trip.pickup.lng], {
+icon: createPinIcon("صعود", "#ff7100", "📍")
+}).addTo(map);
+const dMarker = L.marker([trip.dropoff.lat, trip.dropoff.lng], {
+icon: createPinIcon("وجهة", "#2563eb", "🏁")
+}).addTo(map);
+previewMarkers = [pMarker, dMarker];
+try {
+const res = await fetch(⁠https://router.project-osrm.org/route/v1/driving/${trip.pickup.lng},${trip.pickup.lat};${trip.dropoff.lng},${trip.dropoff.lat}?overview=full&geometries=geojson⁠);
+const data = await res.json();
+if (data.routes?.length) {
+const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+previewPolyline = L.polyline(coords, { color: "#2563eb", weight: 6, opacity: 0.95, lineCap: 'round' }).addTo(map);
+map.fitBounds(previewPolyline.getBounds(), { padding: [60, 60] });
+return;
+}
+} catch (e) {}
+previewPolyline = L.polyline([[trip.pickup.lat, trip.pickup.lng], [trip.dropoff.lat, trip.dropoff.lng]], {
+color: "#2563eb", weight: 5, dashArray: '6, 8'
+}).addTo(map);
+map.fitBounds(L.featureGroup([pMarker, dMarker]).getBounds(), { padding: [60, 60] });
+}
+function clearPreviewRoute() {
+if (previewPolyline) { map.removeLayer(previewPolyline); previewPolyline = null; }
+previewMarkers.forEach(m => map.removeLayer(m));
+previewMarkers = [];
+}
+window.declineIncoming = () => {
+clearTimeout(orderTimeoutTimer);
+clearPreviewRoute();
+const sheet = document.getElementById("incomingOrderSheet");
+sheet.classList.add("dismissing");
+setTimeout(() => {
+sheet.style.display = "none";
+sheet.classList.remove("dismissing");
+}, 280);
+currentIncomingTrip = null;
+};
+window.acceptIncoming = async () => {
+if (!currentIncomingTrip) return;
+const trip = currentIncomingTrip;
+clearTimeout(orderTimeoutTimer);
+const ref = doc(db, "trips", trip.id);
+try {
+await runTransaction(db, async tx => {
+const snap = await tx.get(ref);
+if (!snap.exists() || snap.data().status !== "searching") {
+throw new Error("TAKEN");
+}
+tx.update(ref, {
+status: "accepted",
+captainPhone: capSession.phone,
+captainName: capSession.name,
+captainCar: capSession.carModel,
+captainPlate: capSession.carPlate,
+captainRating: capSession.rating || 5.0,
+captainCoords: { lat: captainCoords.lat, lng: captainCoords.lng, heading: carMarkerRotation },
+acceptedAt: serverTimestamp()
+});
+});
+clearPreviewRoute();
+document.getElementById("incomingOrderSheet").style.display = "none";
+const isShared = trip.isSharedSeat || (trip.category && trip.category.includes("عبرية"));
+if (isShared) {
+trip.phase = "pickup";
+activeSharedPassengers.push(trip);
+updateSharedDeck();
+drawActiveTripRoute(trip, "pickup");
+showToast(⁠تم قبول راكب العبرية 💺 (${activeSharedPassengers.length}/4)⁠, "success");
+} else {
+activeTrip = trip;
+setupActivePanel(trip);
+drawActiveTripRoute(trip, "pickup");
+showToast("تم قبول المشوار ⚡", "success");
+}
+playSuccessSound();
+haptic('success');
+currentIncomingTrip = null;
+} catch (e) {
+showToast("سبقك كابتن آخر على هذا الطلب", "warning");
+playErrorSound();
+declineIncoming();
+}
+};
+async function drawActiveTripRoute(trip, phase) {
+clearActiveTripLayers();
+document.getElementById("btnFitActiveRoute").style.display = "flex";
+let fromCoords = captainCoords;
+let toCoords = phase === "pickup" ? trip.pickup : trip.dropoff;
+let targetLabel = phase === "pickup" ? "صعود" : "وجهة";
+let targetColor = phase === "pickup" ? "#ff7100" : "#10b981";
+let targetSymbol = phase === "pickup" ? "📍" : "🏁";
+if (!toCoords?.lat) return;
+const targetMarker = L.marker([toCoords.lat, toCoords.lng], {
+icon: createPinIcon(targetLabel, targetColor, targetSymbol)
+}).addTo(map);
+activeMarkers = [targetMarker];
+try {
+const res = await fetch(⁠https://router.project-osrm.org/route/v1/driving/${fromCoords.lng},${fromCoords.lat};${toCoords.lng},${toCoords.lat}?overview=full&geometries=geojson⁠);
+const data = await res.json();
+if (data.routes?.length) {
+const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+activePolyline = L.polyline(coords, {
+color: phase === "pickup" ? "#0284c7" : "#10b981",
+weight: 6, opacity: 0.95, lineCap: 'round'
+}).addTo(map);
+map.fitBounds(activePolyline.getBounds(), { padding: [60, 70] });
+return;
+}
+} catch (e) {}
+activePolyline = L.polyline([[fromCoords.lat, fromCoords.lng], [toCoords.lat, toCoords.lng]], {
+color: phase === "pickup" ? "#0284c7" : "#10b981", weight: 5, dashArray: '6, 8'
+}).addTo(map);
+map.fitBounds(L.latLngBounds([[fromCoords.lat, fromCoords.lng], [toCoords.lat, toCoords.lng]]), { padding: [60, 70] });
+}
+function clearActiveTripLayers() {
+if (activePolyline) { map.removeLayer(activePolyline); activePolyline = null; }
+activeMarkers.forEach(m => map.removeLayer(m));
+activeMarkers = [];
+document.getElementById("btnFitActiveRoute").style.display = "none";
+}
+window.fitActiveRouteBounds = () => {
+if (activePolyline) map.fitBounds(activePolyline.getBounds(), { padding: [60, 70] });
+haptic('light');
+};
+function setupActivePanel(trip) {
+document.getElementById("actCustomerName").innerText = trip.userName || "الزبون";
+document.getElementById("actFare").innerText = ⁠${Number(trip.fare || 2500).toLocaleString()} د.ع⁠;
+document.getElementById("lblTripPhaseStep").innerText = "الهدف: التوجه لموقع الزبون";
+document.getElementById("lblTripPhaseAddress").innerText = trip.pickup?.address || "نقطة الصعود";
+document.getElementById("btnActCall").href = trip.userPhone ? ⁠tel:${trip.userPhone}⁠ : "#";
+const cleanPhone = (trip.userPhone || "").replace(/^0/, "964");
+document.getElementById("btnActWa").href = ⁠https://wa.me/${cleanPhone}⁠;
+const catTag = document.getElementById("actCategoryTag");
+catTag.className = "category-tag";
+if (trip.category && trip.category.includes("بلس")) {
+catTag.innerText = "⭐ تكسي بلس"; catTag.classList.add("plus");
+} else {
+catTag.innerText = "🚗 تكسي توفير"; catTag.classList.add("eco");
+}
+const actionBtn = document.getElementById("btnTripStageAction");
+actionBtn.className = "action-big-btn to-pickup";
+actionBtn.innerHTML = "<span>وصلت لموقع الزبون 📍</span>";
+activeTrip.stage = "accepted";
+document.getElementById("activeTripPanel").style.display = "flex";
+}
+window.advanceTripStage = async () => {
+if (!activeTrip) return;
+const tripId = activeTrip.id;
+const actionBtn = document.getElementById("btnTripStageAction");
+if (activeTrip.stage === "accepted") {
+await updateDoc(doc(db, "trips", tripId), { status: "arrived" });
+activeTrip.stage = "arrived";
+document.getElementById("lblTripPhaseStep").innerText = "أنت الآن عند باب الزبون";
+document.getElementById("lblTripPhaseAddress").innerText = "بانتظار صعود الزبون 🔔";
+actionBtn.className = "action-big-btn start-trip";
+actionBtn.innerHTML = "<span>صعد الزبون (بدء الرحلة) 🚀</span>";
+showToast("تم إشعار الزبون بوصولك 🔔", "info");
+haptic('medium');
+}
+else if (activeTrip.stage === "arrived") {
+await updateDoc(doc(db, "trips", tripId), { status: "on_way" });
+activeTrip.stage = "on_way";
+document.getElementById("lblTripPhaseStep").innerText = "في الطريق إلى وجهة النزول";
+document.getElementById("lblTripPhaseAddress").innerText = activeTrip.dropoff?.address || "الوجهة";
+actionBtn.className = "action-big-btn finish-trip";
+actionBtn.innerHTML = "<span>تم الوصول وإنهاء المشوار 🏁</span>";
+drawActiveTripRoute(activeTrip, "dropoff");
+showToast("بدأت الرحلة! الخريطة ترشدك للوجهة 🚀", "success");
+haptic('success');
+}
+else if (activeTrip.stage === "on_way") {
+const fare = Number(activeTrip.fare || 2500);
+const commission = Math.round(fare * 0.10);
+await updateDoc(doc(db, "trips", tripId), {
+status: "completed",
+commissionCut: commission,
+completedAt: serverTimestamp()
+});
+capSession.walletBalance = Math.max(0, (capSession.walletBalance || 0) - commission);
+capSession.todayEarnings = (capSession.todayEarnings || 0) + fare;
+capSession.todayTrips = (capSession.todayTrips || 0) + 1;
+capSession.totalTrips = (capSession.totalTrips || 0) + 1;
+capSession.weekEarnings = (capSession.weekEarnings || 0) + fare;
+capSession.monthEarnings = (capSession.monthEarnings || 0) + fare;
+localStorage.setItem("cap_session", JSON.stringify(capSession));
+await setDoc(doc(db, "captains", capSession.phone), capSession, { merge: true });
+clearActiveTripLayers();
+document.getElementById("activeTripPanel").style.display = "none";
+showToast(⁠تم إكمال المشوار ✓ +${fare.toLocaleString()} د.ع⁠, "success");
+playSuccessSound();
+haptic('success');
+activeTrip = null;
+}
+};
+window.openNavigationChooserModal = () => {
+document.getElementById("navModal").style.display = "flex";
+haptic('light');
+};
+window.closeModal = (id) => {
+document.getElementById(id).style.display = "none";
+};
+window.launchNavigationApp = (appType) => {
+closeModal('navModal');
+if (!activeTrip) return;
+const target = (activeTrip.stage === "accepted") ? activeTrip.pickup : activeTrip.dropoff;
+if (!target?.lat) return;
+const urls = {
+google: ⁠https://www.google.com/maps/dir/?api=1&destination=${target.lat},${target.lng}&travelmode=driving⁠,
+waze: ⁠https://waze.com/ul?ll=${target.lat},${target.lng}&navigate=yes⁠,
+yandex: ⁠https://yandex.com/maps/?rtext=~${target.lat},${target.lng}&rtt=auto⁠
+};
+window.open(urls[appType], "_blank");
+haptic('medium');
+};
+function updateSharedDeck() {
+document.getElementById("lblSharedSeatsCount").innerText = ⁠${activeSharedPassengers.length} / 4⁠;
+const list = document.getElementById("sharedPassengersList");
+if (!activeSharedPassengers.length) {
+list.innerHTML = ⁠<div style="text-align:center; font-size:11.5px; color:var(--muted); padding:12px;">🔍 الرادار يبحث عن ركاب على نفس مسارك...</div>⁠;
+return;
+}
+list.innerHTML = activeSharedPassengers.map((p, idx) => ⁠<div style="background:rgba(255,255,255,0.04); border:1px solid var(--card-border); border-radius:14px; padding:11px; display:flex; flex-direction:column; gap:7px;"> <div style="display:flex; justify-content:space-between; align-items:center;"> <b style="font-size:13px; color:#fff;">👤 ${p.userName || 'الراكب'}</b> <span style="font-size:12.5px; color:var(--green-light); font-weight:900;">${(p.fare || 1000).toLocaleString()} د.ع</span> </div> <div style="font-size:11.5px; color:var(--muted);">📍 <b style="color:#fff;">${p.pickup?.address || 'الموقع'}</b></div> <div style="font-size:11.5px; color:var(--cyan);">🏁 <b>${p.dropoff?.address || 'الوجهة'}</b></div> <div style="display:flex; gap:6px; margin-top:3px;"> <button onclick="focusSharedPassengerRoute(${idx})" style="flex:1; background:var(--gradient-cyan); color:#fff; border:none; padding:8px; border-radius:10px; font-size:11px; font-weight:900; cursor:pointer;">عرض 🗺️</button> <a href="tel:${p.userPhone || ''}" style="padding:8px 12px; border-radius:10px; background:#475569; color:#fff; text-decoration:none; font-size:13px; display:flex; align-items:center;">📞</a> <button onclick="finishSharedPassenger('${p.id}', ${idx})" style="flex:1; background:var(--gradient-green); color:#fff; border:none; padding:8px; border-radius:10px; font-size:11px; font-weight:900; cursor:pointer;">نزل 🏁</button> </div> </div>⁠).join("");
+}
+window.focusSharedPassengerRoute = (idx) => {
+const p = activeSharedPassengers[idx];
+if (p) {
+drawActiveTripRoute(p, p.phase || "pickup");
+showToast(⁠توجيه الخريطة لراكب (${p.userName})⁠, "info");
+haptic('light');
+}
+};
+window.finishSharedPassenger = async (tripId, idx) => {
+const p = activeSharedPassengers[idx];
+if (!p) return;
+const fare = Number(p.fare || 1000);
+const commission = Math.round(fare * 0.10);
+await updateDoc(doc(db, "trips", tripId), {
+status: "completed",
+commissionCut: commission,
+completedAt: serverTimestamp()
+});
+capSession.walletBalance = Math.max(0, (capSession.walletBalance || 0) - commission);
+capSession.todayEarnings = (capSession.todayEarnings || 0) + fare;
+capSession.todayTrips = (capSession.todayTrips || 0) + 1;
+capSession.totalTrips = (capSession.totalTrips || 0) + 1;
+localStorage.setItem("cap_session", JSON.stringify(capSession));
+await setDoc(doc(db, "captains", capSession.phone), capSession, { merge: true });
+activeSharedPassengers.splice(idx, 1);
+clearActiveTripLayers();
+updateSharedDeck();
+showToast(⁠إنهاء رحلة (${p.userName}) ✓ +${fare.toLocaleString()} د.ع⁠, "success");
+playSuccessSound();
+haptic('success');
+};
+window.openZoneModal = () => {
+document.getElementById("selZoneRadius").value = capSession.zoneRadiusKm || "4";
+document.getElementById("zoneModal").style.display = "flex";
+haptic('light');
+};
+window.saveZoneSettings = () => {
+capSession.zoneRadiusKm = Number(document.getElementById("selZoneRadius").value);
+localStorage.setItem("cap_session", JSON.stringify(capSession));
+renderHeader();
+drawZoneCircle();
+closeModal('zoneModal');
+showToast("تم تحديث نطاق العمل ✓", "success");
+haptic('success');
+};
+window.openProfileModal = () => {
+document.getElementById("lblModalWallet").innerText = ⁠${(capSession.walletBalance || 0).toLocaleString()} د.ع⁠;
+document.getElementById("inCapName").value = capSession.name || "";
+document.getElementById("inCapCar").value = capSession.carModel || "";
+document.getElementById("inCapPlate").value = capSession.carPlate || "";
+document.getElementById("profileModal").style.display = "flex";
+haptic('light');
+};
+window.saveCaptainProfile = async () => {
+capSession.name = document.getElementById("inCapName").value.trim() || capSession.name;
+capSession.carModel = document.getElementById("inCapCar").value.trim() || capSession.carModel;
+capSession.carPlate = document.getElementById("inCapPlate").value.trim() || capSession.carPlate;
+localStorage.setItem("cap_session", JSON.stringify(capSession));
+await setDoc(doc(db, "captains", capSession.phone), capSession, { merge: true });
+renderHeader();
+closeModal('profileModal');
+showToast("تم حفظ البيانات ✓", "success");
+haptic('success');
+};
+window.logoutCaptain = () => {
+localStorage.removeItem("cap_session");
+location.reload();
+};
+window.openStatsModal = async () => {
+document.getElementById("statTodayEarnings").innerText = (capSession.todayEarnings || 0).toLocaleString();
+document.getElementById("statTodayTrips").innerText = capSession.todayTrips || 0;
+document.getElementById("statRating").innerText = Number(capSession.rating || 5.0).toFixed(1);
+document.getElementById("statWeekEarnings").innerText = (capSession.weekEarnings || 0).toLocaleString();
+document.getElementById("statMonthEarnings").innerText = (capSession.monthEarnings || 0).toLocaleString();
+const chart = document.getElementById('chartContainer');
+chart.innerHTML = '';
+const days = ['أحد','إثن','ثلا','أرب','خمي','جمع','سبت'];
+const today = new Date();
+let dailyEarnings = [0,0,0,0,0,0,0];
+try {
+const tripsRef = collection(db, "trips");
+const q = query(tripsRef, where("captainPhone", "", capSession.phone), where("status", "", "completed"));
+const snap = await getDocs(q);
+snap.forEach(d => {
+const data = d.data();
+if (data.completedAt?.toDate) {
+const dt = data.completedAt.toDate();
+const diffDays = Math.floor((today - dt) / 86400000);
+if (diffDays >= 0 && diffDays < 7) {
+dailyEarnings[6 - diffDays] += Number(data.fare || 0);
+}
+}
+});
+} catch(e) {}
+const maxVal = Math.max(...dailyEarnings, 1000);
+dailyEarnings.forEach((val, i) => {
+const dayIdx = (today.getDay() - 6 + i + 7) % 7;
+const heightPct = (val / maxVal) * 100;
+const bar = document.createElement('div');
+bar.style.cssText = ⁠flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:4px;⁠;
+bar.innerHTML = ⁠<div style="width:100%; background:linear-gradient(180deg, #2563eb, #1e40af); border-radius:6px 6px 2px 2px; height:${Math.max(heightPct, 4)}%; min-height:4px; transition:height 0.5s ease;"></div> <span style="font-size:9.5px; color:var(--muted); font-weight:800;">${days[dayIdx]}</span>⁠;
+chart.appendChild(bar);
+});
+document.getElementById("statsModal").style.display = "flex";
+haptic('light');
+};
+document.addEventListener('touchstart', () => initAudio(), { once: true });
+document.addEventListener('click', () => initAudio(), { once: true });
+</script>
+</body>
+</html>
