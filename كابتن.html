@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#05070f" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#eef2f9" media="(prefers-color-scheme: light)">
 <meta name="color-scheme" content="dark light">
@@ -243,37 +243,111 @@ h1, h2, h3, h4 { line-height: 1.35; font-weight: 900; }
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   z-index: 1;
-  background: #070c18;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #0d1526 0%, #070c18 60%, #05080f 100%);
   transition: opacity var(--t) var(--ease);
+  /* ضروري: بدونها الخريطة لا تسحب بالأصبع على الجوال */
+  touch-action: none;
+  outline: none;
+  opacity: 0;
 }
+#map.ready { opacity: 1; transition: opacity .5s var(--ease); }
+html[data-theme="light"] #map { background: #e7ecf4; }
 html[data-theme="dark"] #map { background: #060a14; }
-html[data-map-style="dark"] .leaflet-tile-pane { filter: invert(1) hue-rotate(182deg) brightness(.95) contrast(.92) saturate(.72); }
-html[data-map-style="light"] .leaflet-tile-pane { filter: saturate(1.05) brightness(1.02); }
 
-.leaflet-container { font: inherit; background: transparent; }
-.leaflet-control-attribution { display: none !important; }
+/* فلاتر الخريطة: تُستخدم فقط كبديل عند تعذّر بلاطات CARTO الداكنة */
+html[data-map-style="invert"] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(182deg) brightness(1.06) contrast(.92) saturate(.62);
+}
+html[data-map-style="light"] .leaflet-tile-pane { filter: saturate(1.06) contrast(1.04); }
+
+#map { direction: ltr; }
+.leaflet-container {
+  font: inherit; background: transparent;
+  direction: ltr;
+  touch-action: none; outline: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+}
+.leaflet-tile { image-rendering: -webkit-optimize-contrast; }
+.leaflet-map-pane { will-change: transform; }
+.leaflet-marker-pane, .leaflet-shadow-pane { pointer-events: none; }
+.leaflet-marker-icon { -webkit-user-drag: none; user-drag: none; }
+.leaflet-control-container .leaflet-control-attribution { display: none !important; }
+
+/* تكبير/تصغير مخصّص (أزرار الخريطة الأصلية مخفية) */
 .leaflet-bar, .leaflet-control-zoom { display: none !important; }
+
+.map-zoom {
+  position: absolute; z-index: 1950; pointer-events: auto;
+  inset-inline-end: 12px; bottom: calc(var(--nav-h) + 96px + var(--safe-b));
+  display: flex; flex-direction: column; gap: 8px;
+  transition: bottom var(--t) var(--ease), opacity var(--t);
+}
+.map-zoom .mz {
+  width: 44px; height: 44px; border-radius: 15px; display: grid; place-items: center;
+  font-size: 19px; font-weight: 950; color: var(--text); line-height: 1;
+  background: var(--surface); border: 1px solid var(--stroke-2);
+  backdrop-filter: blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4);
+  box-shadow: var(--sh-2), var(--inner-hi);
+  transition: transform var(--t-fast) var(--ease), background var(--t);
+}
+.map-zoom .mz:active { transform: scale(.88); background: var(--surface-2); }
+.map-zoom .mz.wide { font-size: 13px; }
+body:not(.view-map) .map-zoom, body:not(.view-map) .map-credit { opacity: 0; visibility: hidden; pointer-events: none; }
+#app > .map-credit { pointer-events: none; }
+
+.map-credit {
+  position: absolute; z-index: 1900; pointer-events: none;
+  inset-inline-start: 12px; bottom: calc(var(--nav-h) + var(--safe-b) + 74px);
+  font-size: 9px; font-weight: 800; color: rgba(226,232,240,.62);
+  background: rgba(6,10,20,.42); border-radius: 8px; padding: 2px 7px;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+html[data-theme="light"] .map-credit { color: rgba(30,41,59,.6); background: rgba(255,255,255,.5); }
+
+/* تنبيه تعذّر تحميل الخريطة */
+.map-fallback {
+  position: absolute; inset: auto 12px calc(var(--nav-h) + 100px + var(--safe-b)) 12px; z-index: 1960;
+  display: none; gap: 10px; align-items: center; justify-content: space-between;
+  padding: 11px 13px; border-radius: var(--r-md);
+  background: var(--elevated); border: 1px solid rgba(244,63,94,.35);
+  box-shadow: var(--sh-3); font-size: var(--fs-xs); font-weight: 800; color: var(--text-2);
+  pointer-events: auto;
+}
+.map-fallback.show { display: flex; }
+
 .leaflet-popup-content-wrapper, .leaflet-popup-tip {
   background: var(--surface-solid); color: var(--text);
   border: 1px solid var(--stroke-2); box-shadow: var(--sh-3);
   border-radius: var(--r-md); font-family: var(--font);
 }
-.leaflet-popup-content { margin: 10px 12px; font-size: var(--fs-sm); font-weight: 700; }
+.leaflet-popup-content { direction: rtl; text-align: right; margin: 10px 12px; font-size: var(--fs-sm); font-weight: 700; line-height: 1.7; }
+.leaflet-popup-close-button { color: var(--muted) !important; padding: 8px 8px 0 0 !important; }
 
+/* حجاب خفيف حتى لا تغطي التدرّجات تفاصيل الخريطة */
 .map-veil {
   position: absolute; inset: 0; z-index: 2; pointer-events: none;
   background:
-    radial-gradient(120% 60% at 50% 0%, rgba(5,7,15,.55) 0%, transparent 60%),
-    radial-gradient(120% 70% at 50% 100%, rgba(5,7,15,.72) 0%, transparent 62%);
+    linear-gradient(180deg, rgba(5,7,15,.34) 0%, rgba(5,7,15,0) 22%),
+    linear-gradient(0deg, rgba(5,7,15,.30) 0%, rgba(5,7,15,0) 20%);
 }
 html[data-theme="light"] .map-veil {
   background:
-    radial-gradient(120% 60% at 50% 0%, rgba(255,255,255,.5) 0%, transparent 60%),
-    radial-gradient(120% 70% at 50% 100%, rgba(238,242,249,.7) 0%, transparent 62%);
+    linear-gradient(180deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 22%),
+    linear-gradient(0deg, rgba(238,242,249,.28) 0%, rgba(255,255,255,0) 20%);
 }
 
 /* ------------------------------- 4) الهيكل -------------------------------- */
-#app { position: absolute; inset: 0; z-index: 3; }
+/* #app طبقة شفافة فوق الخريطة: يجب أن مرّر اللمس للخريطة في الفراغات،
+   وإلا الخريطة لا تُسحب ولا تتحرك إطلاقًا (عطل كان موجودًا). */
+#app { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+#app > * { pointer-events: auto; }
+/* الأوعية العائمة: لا تلمس إلا الأزرار نفسها، لتبقى الخريطة قابلة للسحب من بينها */
+#app > .topbar, #app > .hud-stack, #app > .fab-stack, #app > .cta-dock, #app > .map-zoom { pointer-events: none; }
+#app > .topbar > *, #app > .hud-stack > *, #app > .fab-stack > *, #app > .cta-dock > *, #app > .map-zoom > * { pointer-events: auto; }
+body.auth-on #app, body.auth-on .map-veil { display: none !important; }
+body.auth-on #map { opacity: .35; filter: saturate(.6); }
 
 /* شاشة الإقلاع */
 #splash {
@@ -1272,16 +1346,313 @@ body.banner-on #toastContainer { top: calc(44px + var(--safe-t)); }
 /* شريط التقدم الرفيع أعلى بطاقة الطلب */
 .order-sheet .pulse-ring { animation: ringPulse 1.6s var(--ease-soft) infinite; }
 @keyframes ringPulse { 0%,100% { opacity:.55; } 50% { opacity:1; } }
+
+/* ═══════════════════════ 18) شاشة الدخول / إنشاء الحساب ═══════════════════ */
+#auth {
+  position: fixed; inset: 0; z-index: 99000;
+  display: none; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(90% 55% at 50% 0%, rgba(37,99,235,.30), transparent 62%),
+    radial-gradient(70% 45% at 85% 100%, rgba(139,92,246,.22), transparent 60%),
+    radial-gradient(60% 40% at 10% 90%, rgba(16,185,129,.14), transparent 60%),
+    var(--bg);
+  padding: calc(18px + var(--safe-t)) 16px calc(22px + var(--safe-b));
+}
+#auth.show { display: block; animation: authIn .45s var(--ease); }
+@keyframes authIn { from { opacity: 0; } to { opacity: 1; } }
+.auth-wrap {
+  width: 100%; max-width: 460px; margin-inline: auto;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.auth-brand { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.auth-logo {
+  width: 82px; height: 82px; border-radius: 26px; display: grid; place-items: center; font-size: 40px;
+  background: var(--g-primary-vivid); box-shadow: var(--glow-primary), var(--inner-hi);
+  animation: floatY 3.4s var(--ease-soft) infinite;
+}
+.auth-title { font-size: var(--fs-2xl); font-weight: 950; letter-spacing: -.4px; }
+.auth-sub { font-size: var(--fs-xs); color: var(--muted); font-weight: 800; line-height: 1.8; max-width: 34ch; }
+.auth-card {
+  background: var(--surface-2); border: 1px solid var(--stroke-2); border-radius: var(--r-xl);
+  box-shadow: var(--sh-3), var(--inner-hi);
+  backdrop-filter: blur(var(--blur)) saturate(1.4); -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4);
+  padding: 14px; display: flex; flex-direction: column; gap: 12px;
+}
+.auth-tabs { display: flex; gap: 4px; padding: 4px; border-radius: var(--r-md); background: rgba(148,163,184,.10); border: 1px solid var(--stroke); }
+.auth-tab {
+  flex: 1; padding: 11px 10px; border-radius: var(--r-sm); font-size: var(--fs-sm); font-weight: 950;
+  color: var(--muted); transition: all var(--t) var(--ease); white-space: nowrap;
+}
+.auth-tab.active { background: var(--g-primary); color: #fff; box-shadow: var(--glow-primary); }
+.auth-form { display: none; flex-direction: column; gap: 11px; }
+.auth-form.active { display: flex; animation: viewIn var(--t) var(--ease); }
+.auth-field { display: flex; flex-direction: column; gap: 6px; }
+.auth-io {
+  width: 100%; padding: 14px 14px; border-radius: var(--r-md);
+  background: rgba(148,163,184,.08); border: 1.5px solid var(--stroke);
+  color: var(--text); font-size: 16px; font-weight: 800; line-height: 1.4;
+  transition: border-color var(--t), background var(--t), box-shadow var(--t);
+  -webkit-appearance: none; appearance: none; border-radius: var(--r-md);
+}
+html[data-theme="light"] .auth-io { background: #fff; }
+.auth-io:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,.18); background: rgba(59,130,246,.06); }
+.auth-io.err { border-color: var(--red); box-shadow: 0 0 0 3px rgba(244,63,94,.16); }
+.auth-io::placeholder { color: var(--muted-2); font-weight: 700; }
+.auth-io-wrap { position: relative; }
+.auth-io-wrap .peek {
+  position: absolute; inset-inline-end: 6px; top: 50%; transform: translateY(-50%);
+  width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+  color: var(--muted); font-size: 16px;
+}
+.auth-io-wrap .peek:active { background: rgba(148,163,184,.14); }
+.auth-msg {
+  display: none; gap: 8px; align-items: flex-start;
+  padding: 11px 12px; border-radius: var(--r-md); font-size: var(--fs-xs); font-weight: 900; line-height: 1.75;
+  border: 1px solid transparent;
+}
+.auth-msg.show { display: flex; }
+.auth-msg.bad { background: rgba(244,63,94,.12); border-color: rgba(244,63,94,.34); color: #fda4af; }
+.auth-msg.good { background: rgba(16,185,129,.12); border-color: rgba(16,185,129,.32); color: #6ee7b7; }
+html[data-theme="light"] .auth-msg.bad { color: #be123c; }
+html[data-theme="light"] .auth-msg.good { color: #047857; }
+.auth-hint { font-size: 10px; color: var(--muted-2); font-weight: 800; }
+.auth-foot { display: flex; flex-direction: column; gap: 9px; align-items: center; text-align: center; }
+.auth-links { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.auth-link {
+  font-size: var(--fs-2xs); font-weight: 900; color: var(--primary);
+  padding: 8px 12px; border-radius: var(--r-full); border: 1px solid var(--stroke);
+  background: var(--card); transition: transform var(--t-fast) var(--ease), background var(--t);
+}
+.auth-link:active { transform: scale(.96); }
+.auth-sep { display: flex; align-items: center; gap: 10px; color: var(--muted-2); font-size: 10px; font-weight: 900; }
+.auth-sep::before, .auth-sep::after { content: ''; height: 1px; flex: 1; background: var(--stroke-2); }
+.auth-chip {
+  display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: var(--r-full);
+  background: var(--card); border: 1px solid var(--stroke); font-size: 10px; font-weight: 900; color: var(--muted);
+}
+.auth-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+body.auth-on { overflow: hidden; }
+body.auth-on #toastContainer { z-index: 99500; }
+
+/* شاشة عرض على الأجهزة الكبيرة: عمودان (هوية + نموذج) */
+@media (min-width: 880px) {
+  #auth { display: none; place-items: center; padding: 28px; }
+  #auth.show { display: grid; align-content: safe center; }
+  .auth-wrap { max-width: 940px; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 34px; }
+  .auth-brand { text-align: start; align-items: flex-start; gap: 14px; }
+  .auth-logo { width: 96px; height: 96px; font-size: 46px; }
+  .auth-title { font-size: var(--fs-3xl); }
+  .auth-sub { font-size: var(--fs-sm); max-width: 40ch; }
+  .auth-card { padding: 20px; border-radius: var(--r-2xl); }
+  .auth-form { gap: 13px; }
+  .auth-list { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+  .auth-list li {
+    display: flex; align-items: center; gap: 9px; font-size: var(--fs-xs); font-weight: 800; color: var(--text-2);
+  }
+  .auth-list .b-ico { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; font-size: 15px; background: rgba(148,163,184,.12); flex-shrink: 0; }
+}
+@media (max-width: 879px) { .auth-list { display: none; } }
+
+/* ═══════════════════════ 19) الاستجابة الشاملة (جوال/لوحي/سطح مكتب) ══════════════ */
+/* أحجام مرنة تعتمد على المنفذ حتى لا تنكسر على أي شاشة */
+:root {
+  --fs-md: clamp(13.5px, 12.4px + 0.42vw, 15.5px);
+  --fs-lg: clamp(15.5px, 14.2px + 0.55vw, 18.5px);
+  --fs-xl: clamp(18px, 16.4px + 0.7vw, 22px);
+  --fs-2xl: clamp(22px, 19px + 1.2vw, 30px);
+  --fs-3xl: clamp(26px, 22px + 1.7vw, 38px);
+  --fs-4xl: clamp(32px, 26px + 2.4vw, 50px);
+  --content-max: 720px;
+  --shell-pad: 14px;
+}
+/* منع تكبير iOS التلقائي عند التركيز (خطأ شائع على الآيفون) */
+@media (hover: none) and (pointer: coarse) {
+  .input, .select, .textarea, .auth-io { font-size: 16px; }
+  .auth-io { padding: 15px 14px; }
+}
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+img, video { max-width: 100%; height: auto; }
+
+/* شاشات صغيرة جدًا (Galaxy Fold / iPhone SE) */
+@media (max-width: 360px) {
+  :root { --nav-h: 60px; --shell-pad: 10px; }
+  .card { padding: 11px; }
+  .view-body { padding: 11px 11px 20px; gap: 11px; }
+  .hero-card { padding: 15px 13px; }
+  .topbar { inset-inline: 9px; }
+  .fab-stack { inset-inline-start: 9px; gap: 7px; }
+  .fab { width: 42px; height: 42px; border-radius: 14px; font-size: 16px; }
+  .map-zoom { inset-inline-end: 9px; }
+  .map-zoom .mz { width: 40px; height: 40px; }
+  .captain-chip { padding: 5px 9px 5px 6px; gap: 7px; }
+  .btn-online { height: 52px; }
+  .nav-item { font-size: 8.5px; }
+  .grid-2, .grid-3 { gap: 8px; }
+  .auth-card { padding: 12px; }
+}
+@media (max-width: 330px) {
+  .nav-item > span:not(.ico):not(.nav-badge) { display: none; }
+  .nav-item { gap: 1px; padding: 8px 0; }
+  .nav-item .ico { font-size: 21px; }
+}
+
+/* عرض متوسط: توحيد العرض الأقصى لكل الأرفف والأشرطة */
+@media (min-width: 640px) {
+  :root { --shell-pad: 18px; --content-max: 760px; }
+  .topbar { inset-inline: auto; inset-inline-start: 50%; transform: translateX(50%); width: min(var(--content-max), 96vw); }
+  .cta-dock { inset-inline: auto; inset-inline-start: 50%; transform: translateX(50%); width: min(var(--content-max), 94vw); }
+  .bottom-nav { inset-inline: auto; inset-inline-start: 50%; transform: translateX(50%); width: min(var(--content-max), 94vw); border-radius: var(--r-xl) var(--r-xl) 0 0; border-inline: 1px solid var(--stroke); }
+  .fab-stack { inset-inline-start: max(18px, calc(50vw - var(--content-max) / 2 + 14px)); }
+  .map-zoom { inset-inline-end: max(18px, calc(50vw - var(--content-max) / 2 + 14px)); }
+  .hud-stack { inset-inline-end: max(18px, calc(50vw - var(--content-max) / 2 + 14px)); }
+  .view-head { padding-inline: max(18px, calc(50vw - var(--content-max) / 2)); }
+  .view-body { padding-inline: max(18px, calc(50vw - var(--content-max) / 2)); }
+  .trip-panel { width: min(620px, 96vw); inset-inline: auto; inset-inline-start: 50%; transform: translateX(50%) translateY(102%); }
+  .trip-panel.show { transform: translateX(50%) translateY(0); }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+}
+@media (min-width: 700px) and (max-width: 1023px) {
+  /* آيباد / لوحي */
+  :root { --content-max: 860px; --nav-h: 72px; }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+  .tiles { grid-template-columns: repeat(4, minmax(0,1fr)); }
+  .view-body { gap: 16px; }
+  .card { padding: 17px; }
+  .auth-wrap { max-width: 560px; }
+}
+
+/* سطح المكتب / آيباد بالعرض: شريط جانبي + لوحة محتوى على الجهة المقابلة */
+@media (min-width: 1024px) {
+  :root { --content-max: 1040px; --nav-h: 0px; --rail-w: 96px; }
+  body { background: #03050b; }
+  body::after {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: radial-gradient(60% 50% at 78% 12%, rgba(37,99,235,.14), transparent 60%);
+  }
+  /* الخريطة تملأ المساحة بعد الشريط الجانبي (خصائص فيزيائية لتفادي التباس RTL) */
+  #map, .map-veil { left: var(--rail-w); right: 0; top: 0; bottom: 0; }
+
+  #app > .bottom-nav {
+    position: fixed; top: 0; bottom: 0; left: 0; right: auto;
+    width: var(--rail-w); height: auto; padding: calc(18px + var(--safe-t)) 10px calc(18px + var(--safe-b));
+    flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px;
+    border-top: none; border-right: 1px solid var(--stroke); border-left: none;
+    transform: none !important; border-radius: 0 !important;
+    background: var(--surface-2); box-shadow: 12px 0 40px rgba(0,0,0,.28);
+  }
+  #app > .bottom-nav .nav-item { flex: 0 0 auto; padding: 12px 4px; gap: 5px; font-size: var(--fs-2xs); border-radius: var(--r-md); }
+  #app > .bottom-nav .nav-item .ico { font-size: 22px; }
+  #app > .bottom-nav .nav-item.active::before { top: 0; inset-inline: 26%; height: 3px; }
+  #app > .bottom-nav .nav-item:hover { background: rgba(148,163,184,.10); }
+  #app > .bottom-nav .nav-rail-logo {
+    display: grid; place-items: center; width: 54px; height: 54px; margin: 0 auto 12px;
+    border-radius: 18px; font-size: 26px; background: var(--g-primary-vivid); box-shadow: var(--glow-primary);
+  }
+
+  /* لوحة المحتوى تلتصق باليمين، والخريطة تظهر خلفها/بجانبها */
+  .view {
+    left: auto; right: 0; top: 0; bottom: 0;
+    width: min(46vw, 560px); padding-bottom: 0;
+    border-left: 1px solid var(--stroke);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    box-shadow: -20px 0 60px rgba(0,0,0,.34);
+  }
+  .view.active { animation: slideInLTR var(--t-slow) var(--ease); }
+  @keyframes slideInLTR { from { opacity: 0; transform: translateX(18px);} to { opacity: 1; transform: none;} }
+  .view-body { max-width: none; padding: 18px 20px 30px; gap: 16px; }
+  .view-head { padding: 18px 20px; }
+
+  #app > .cta-dock {
+    left: calc(var(--rail-w) + 18px); right: auto; bottom: 18px;
+    width: min(420px, 38vw); transform: none; background: var(--surface);
+    border: 1px solid var(--stroke-2); border-radius: var(--r-xl); padding: 9px;
+    backdrop-filter: blur(var(--blur)); -webkit-backdrop-filter: blur(var(--blur)); box-shadow: var(--sh-3);
+  }
+  #app > .fab-stack { left: calc(var(--rail-w) + 18px); right: auto; bottom: 108px; }
+  #app > .map-zoom { left: auto; right: 18px; bottom: 18px; }
+  #app > .map-credit { left: auto; right: 22px; bottom: 76px; }
+  #app > .hud-stack { top: calc(var(--top-h) + 16px + var(--safe-t)); left: auto; right: 18px; }
+  .topbar { left: calc(var(--rail-w) + 18px); right: 18px; width: auto; transform: none; }
+  #toastContainer { left: calc(var(--rail-w) + 20px); transform: none; width: min(420px, 40vw); }
+  .sheet, .modal-box { width: min(560px, 92vw); }
+  .sheet { border-radius: var(--r-2xl) var(--r-2xl) 0 0; }
+  .grid-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .grid-4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+  .kpi-grid { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  /* الماوس: مؤشر يد على الخريطة بدل مؤشر السحب فقط */
+  #map { cursor: grab; }
+  #map:active { cursor: grabbing; }
+}
+@media (min-width: 1360px) {
+  :root { --rail-w: 116px; --content-max: 1200px; }
+  .view { width: min(42vw, 620px); }
+  #app > .cta-dock { width: min(440px, 30vw); }
+}
+/* شاشات عريضة جدًا: محتوى أوسع داخل اللوحة الجانبية */
+@media (min-width: 1700px) {
+  .view { width: min(38vw, 720px); }
+  .grid-3 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+
+@media (max-height: 720px) and (orientation: portrait) {
+  .fab-stack { gap: 6px; }
+  .fab { width: 42px; height: 42px; border-radius: 14px; font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .view.active { animation: none; } }
+
+/* وضع أفقي قصير (جوّال بالعرض / أجهزة لابتوب صغيرة) */
+@media (max-height: 560px) and (orientation: landscape) {
+  :root { --nav-h: 52px; --top-h: 54px; }
+  .topbar { top: calc(6px + var(--safe-t)); }
+  .captain-chip { padding: 4px 10px 4px 6px; }
+  .avatar { width: 28px; height: 28px; border-radius: 10px; }
+  .fab-stack { flex-direction: row; inset-inline-start: 50%; transform: translateX(50%); bottom: calc(var(--nav-h) + 8px + var(--safe-b)); }
+  .map-zoom { flex-direction: row; inset-inline-end: 12px; bottom: calc(var(--nav-h) + 8px + var(--safe-b)); }
+  .cta-dock { bottom: calc(var(--nav-h) + 6px + var(--safe-b)); }
+  .btn-online { height: 44px; }
+  .btn-mode { height: 44px; }
+  .hud-stack { top: calc(var(--top-h) + 8px + var(--safe-t)); }
+  .view { padding-bottom: 0; }
+  .view-body { padding-top: 10px; gap: 10px; }
+  .sheet { max-height: 88vh; }
+  .trip-panel { max-height: 80vh; }
+  #auth { padding: calc(10px + var(--safe-t)) 16px calc(14px + var(--safe-b)); }
+  .auth-logo { width: 56px; height: 56px; font-size: 28px; border-radius: 18px; }
+  .auth-brand { gap: 6px; }
+}
+@media (max-height: 460px) and (orientation: landscape) {
+  .auth-brand { display: none; }
+  .splash-logo { width: 62px; height: 62px; font-size: 30px; }
+}
+/* لوحي أفقي كبير: توسيع الأرفف */
+@media (min-width: 1180px) and (orientation: landscape) {
+  .sheet, .modal-box { width: min(680px, 74vw); }
+  .order-sheet { width: min(520px, 46vw) !important; }
+}
+/* قلم/لمس على الوحي: لمس أكبر */
+@media (pointer: coarse) {
+  .btn { min-height: 46px; }
+  .nav-item { min-height: 54px; }
+  .tab-pill { padding: 10px 16px; }
+  .seg { padding: 10px 14px; }
+}
+/* تحسين الوصول: تباين عالٍ */
+@media (prefers-contrast: more) {
+  :root { --stroke: rgba(255,255,255,.28); --stroke-2: rgba(255,255,255,.44); --muted: #b6c2d6; }
+  .map-veil { display: none; }
+}
 </style>
 </head>
-<body>
+<body class="view-map">
 
 <!-- ═══════════════════════ شاشة الإقلاع ═══════════════════════ -->
 <div id="splash" role="status" aria-live="polite">
   <div class="splash-logo">🚕</div>
   <div class="center">
     <div class="splash-title">وصلني بطريقك</div>
-    <div class="splash-sub">كابتن برو — الإصدار 2.0</div>
+    <div class="splash-sub">كابتن برو — الإصدار 2.1</div>
   </div>
   <div class="splash-bar"><i></i></div>
   <div class="splash-steps" id="splashStep">جاري التهيئة…</div>
@@ -1354,6 +1725,19 @@ body.banner-on #toastContainer { top: calc(44px + var(--safe-t)); }
     <button class="glass fab hidden" id="btnFitActiveRoute" data-action="fit-route" aria-label="عرض كامل المسار">🧭<span class="fab-tip">المسار</span></button>
     <button class="glass fab" id="btnHeat" data-action="toggle-heat" aria-label="مناطق الطلب الساخنة">🔥<span class="fab-tip">الطلب</span></button>
     <button class="glass fab" id="btnRadarSweep" data-action="manual-scan" aria-label="بحث يدوي عن طلبات">📡<span class="fab-tip">بحث</span></button>
+    <button class="glass fab" id="btnFollow" data-action="toggle-follow" aria-label="تتبع تلقائي مع الموقع" title="التتبع التلقائي">🧲<span class="fab-tip">تتبّع</span></button>
+    <button class="glass fab" data-action="map-style" aria-label="تغيير شكل الخريطة">🗺️<span class="fab-tip">الشكل</span></button>
+  </div>
+
+  <!-- تكبير/تصغير الخريطة (لم تكن موجودة من قبل) -->
+  <div class="map-zoom" id="mapZoom" role="group" aria-label="تكبير الخريطة">
+    <button class="mz" data-action="map-zoom-in" aria-label="تكبير">＋</button>
+    <button class="mz" data-action="map-zoom-out" aria-label="تصغير">−</button>
+  </div>
+  <div class="map-credit">© OpenStreetMap</div>
+  <div class="map-fallback" id="mapFallback" role="status">
+    <span>⚠️ الخريطة لم تُحمَّل — تحقّق من الإنترنت</span>
+    <button class="btn xs primary" data-action="map-retry">إعادة المحاولة</button>
   </div>
 
   <!-- ═══════════════════ رصيف الإجراء الرئيسي ═══════════════════ -->
@@ -1585,6 +1969,7 @@ body.banner-on #toastContainer { top: calc(44px + var(--safe-t)); }
 
   <!-- ═══════════════════════ شريط التنقّل السفلي ═══════════════════════ -->
   <nav class="bottom-nav" id="bottomNav" role="tablist" aria-label="التنقل الرئيسي">
+    <span class="nav-rail-logo" aria-hidden="true">🚕</span>
     <button class="nav-item active" data-action="go-view" data-view="map" role="tab" aria-selected="true">
       <span class="ico">🗺️</span><span>الخريطة</span>
     </button>
@@ -1606,6 +1991,131 @@ body.banner-on #toastContainer { top: calc(44px + var(--safe-t)); }
 
 </div><!-- /#app -->
 
+<!-- ═══════════════ شاشة تسجيل الدخول / إنشاء الحساب (تظهر عند غياب الجلسة) ═══════════════ -->
+<div id="auth" role="region" aria-label="تسجيل الدخول">
+  <div class="auth-wrap">
+
+    <div class="auth-brand">
+      <div class="auth-logo">🚕</div>
+      <div class="center">
+        <div class="auth-title">وصلني بطريقك</div>
+        <div class="auth-sub">لوحة الكابتن — رادار الطلبات، الملاحة، الأرباح والمحفظة في مكان واحد.</div>
+      </div>
+      <ul class="auth-list">
+        <li><span class="b-ico">📡</span> رادار الطلبات يعمل على قاعدة بياناتك مباشرة</li>
+        <li><span class="b-ico">💰</span> محفظة وكشف حساب وطلبات سحب</li>
+        <li><span class="b-ico">📊</span> تقارير يومية وأسبوعية وشهرية</li>
+        <li><span class="b-ico">🛰️</span> يعمل بدون إنترنت ويُزامِن تلقائيًا</li>
+      </ul>
+      <div class="auth-chip" id="authNetChip"><span class="status-dot online"></span><span>جاري فحص الاتصال…</span></div>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-tabs" role="tablist" aria-label="اختيار الوضع">
+        <button class="auth-tab active" id="tabLogin" role="tab" aria-selected="true" data-action="auth-tab" data-tab="login">تسجيل الدخول</button>
+        <button class="auth-tab" id="tabSignup" role="tab" aria-selected="false" data-action="auth-tab" data-tab="signup">حساب جديد</button>
+      </div>
+
+      <div class="auth-msg" id="authMsg" role="alert" aria-live="assertive"></div>
+
+      <!-- دخول -->
+      <form class="auth-form active" id="formLogin" autocomplete="on" novalidate>
+        <div class="auth-field">
+          <label class="label" for="authLoginPhone">رقم الهاتف <span class="req">*</span></label>
+          <input class="auth-io mono" id="authLoginPhone" name="username" type="tel" inputmode="tel" autocomplete="username"
+                 dir="ltr" maxlength="16" placeholder="07xxxxxxxxx" aria-describedby="authLoginHint">
+          <span class="auth-hint" id="authLoginHint">نفس الرقم المسجّل به حسابك لدى الإدارة.</span>
+        </div>
+        <div class="auth-field">
+          <label class="label" for="authLoginPass">كلمة المرور <span class="req">*</span></label>
+          <div class="auth-io-wrap">
+            <input class="auth-io" id="authLoginPass" name="password" type="password" autocomplete="current-password"
+                   maxlength="40" placeholder="••••••••">
+            <button type="button" class="peek" data-action="auth-peek" data-target="authLoginPass" aria-label="إظهار كلمة المرور">👁️</button>
+          </div>
+        </div>
+        <label class="setting-row" style="cursor:pointer;">
+          <span class="s-ico">🔓</span>
+          <span class="s-body"><span class="s-title">ابقني مسجّلًا</span><span class="s-sub">لن تحتاج إدخال الرقم والكلمة كل مرة على هذا الجهاز</span></span>
+          <span class="switch"><input type="checkbox" id="authRemember" checked><span class="track"></span><span class="knob"></span></span>
+        </label>
+        <button type="submit" class="btn primary block" style="height:54px;font-size:15px;">دخول إلى لوحة الكابتن ⚡</button>
+        <div class="auth-sep">أو</div>
+        <button type="button" class="btn ghost block" data-action="auth-guest">🧪 وضع التجربة (بدون حساب)</button>
+      </form>
+
+      <!-- إنشاء حساب -->
+      <form class="auth-form" id="formSignup" autocomplete="on" novalidate>
+        <div class="auth-field">
+          <label class="label" for="authName">الاسم الكامل <span class="req">*</span></label>
+          <input class="auth-io" id="authName" type="text" autocomplete="name" maxlength="48" placeholder="مثال: علي حسين محمد">
+        </div>
+        <div class="auth-field">
+          <label class="label" for="authPhone">رقم الهاتف <span class="req">*</span></label>
+          <input class="auth-io mono" id="authPhone" type="tel" inputmode="tel" dir="ltr" maxlength="16" placeholder="07xxxxxxxxx">
+          <span class="auth-hint">الرقم هو معرّف حسابك في قاعدة البيانات (11 خانية تبدأ بـ 07).</span>
+        </div>
+        <div class="auth-field">
+          <label class="label" for="authCar">نوع وموديل المركبة <span class="req">*</span></label>
+          <input class="auth-io" id="authCar" type="text" maxlength="40" placeholder="مثال: هيونداي إلنترا 2023">
+        </div>
+        <div class="auth-field">
+          <label class="label" for="authPlate">رقم اللوحة</label>
+          <input class="auth-io" id="authPlate" type="text" maxlength="32" placeholder="مثال: ذي قار 48921 أجرة">
+        </div>
+        <div class="auth-grid-2">
+          <div class="auth-field">
+            <label class="label" for="authZone">نطاق العمل</label>
+            <select class="auth-io" id="authZone">
+              <option value="0">كل المدينة</option>
+              <option value="3">٣ كم حولي</option>
+              <option value="4" selected>٤ كم حولي</option>
+              <option value="6">٦ كم حولي</option>
+              <option value="10">١٠ كم حولي</option>
+            </select>
+          </div>
+          <div class="auth-field">
+            <label class="label" for="authCity">المنطقة</label>
+            <select class="auth-io" id="authCity">
+              <option value="nasiriyah" selected>الناصرية</option>
+            </select>
+          </div>
+        </div>
+        <div class="auth-field">
+          <label class="label" for="authPass">كلمة المرور <span class="req">*</span></label>
+          <div class="auth-io-wrap">
+            <input class="auth-io" id="authPass" type="password" autocomplete="new-password" maxlength="40" placeholder="٦ أحرف على الأقل">
+            <button type="button" class="peek" data-action="auth-peek" data-target="authPass" aria-label="إظهار كلمة المرور">👁️</button>
+          </div>
+          <div class="row gap-2" style="margin-top:2px;">
+            <span class="auth-hint grow">🔒 تُخزَّن مشفّرة على جهازك ولا تُرسَل نصًّا صريحًا.</span>
+          </div>
+        </div>
+        <div class="auth-field">
+          <label class="label" for="authPass2">تأكيد كلمة المرور <span class="req">*</span></label>
+          <input class="auth-io" id="authPass2" type="password" autocomplete="new-password" maxlength="40" placeholder="أعد كتابتها">
+        </div>
+        <div class="auth-field">
+          <label class="label" for="authWallet">رصيد البداية (اختياري)</label>
+          <input class="auth-io mono" id="authWallet" type="number" inputmode="numeric" min="0" step="250" placeholder="0" dir="ltr">
+          <span class="auth-hint">اتركه ٠ إذا كانت الإدارة هي من تحدّد رصيد محفظتك.</span>
+        </div>
+        <button type="submit" class="btn primary block" style="height:54px;font-size:15px;">إنشاء الحساب والدخول 🚀</button>
+        <span class="auth-hint center">بإنشائك الحساب فإنك توافق على استخدام بياناتك لتشغيل الرحلات والمحفظة داخل التطبيق.</span>
+      </form>
+
+      <div class="auth-foot">
+        <div class="auth-links">
+          <button class="auth-link" data-action="auth-forgot">نسيت كلمة المرور؟</button>
+          <button class="auth-link" data-action="auth-theme" id="authThemeBtn">🌙 الوضع الليلي</button>
+          <button class="auth-link" data-action="auth-support">💬 دعم واتساب</button>
+        </div>
+        <span class="auth-hint">وصلني بطريقك — كابتن برو v<span id="authVer">2.1</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- جذر الشرائح والمودالات (يُملأ برمجيًا) -->
 <div class="backdrop" id="backdrop"></div>
 <div id="sheetRoot"></div>
@@ -1623,7 +2133,7 @@ body.banner-on #toastContainer { top: calc(44px + var(--safe-t)); }
 
 <script type="module">
 /* ═══════════════════════════════════════════════════════════════════════════
-   وصلني بطريقك — كابتن برو  |  الإصدار 2.0
+   وصلني بطريقك — كابتن برو  |  الإصدار 2.1
    ملف واحد حديث (بدون أدوات بناء) — معمارية داخلية بطبقات واضحة:
      [1] الإعداد والثوابت        [2] تحميل المكتبات (مع سلاسل احتياطية)
      [3] الأدوات العامة          [4] نظام الواجهة (تنبيهات/شرائح/مودالات)
@@ -1638,7 +2148,7 @@ body.banner-on #toastContainer { top: calc(44px + var(--safe-t)); }
 const APP = Object.freeze({
   name: 'وصلني بطريقك — كابتن برو',
   shortName: 'كابتن برو',
-  version: '2.0.0',
+  version: '2.1.0',
   build: '2026-09-13',
   // مفاتيح التخزين المحلية — مطابقة تمامًا للنسخة السابقة (لا كسر لواجهة التسجيل)
   SESSION_KEY: 'cap_session',
@@ -1647,6 +2157,7 @@ const APP = Object.freeze({
   SETTINGS_KEY: 'cap_settings_v2',
   LOGS_KEY: 'cap_logs_v2',
   QUEUE_KEY: 'cap_queue_v2',
+  ACCOUNTS_KEY: 'cap_accounts_v1',   // حسابات الكابتن (مرتبطة بنفس معرّف cap_session)
   // ثوابت العمل
   COMMISSION_RATE: 0.10,
   MAX_SHARED_SEATS: 4,
@@ -2312,6 +2823,8 @@ const DEFAULT_SETTINGS = {
 /* الحالة العامة للتطبيق */
 const State = {
   ready: false,
+  authed: false,            // هل تم تسجيل الدخول فعلًا؟
+  bootTimer: null,          // المؤقت الدوري (يُوقف عند الخروج)
   settings: { ...DEFAULT_SETTINGS },
   session: null,             // ← cap_session نفسه (نفس المفاتيح القديمة)
   db: { available: false, version: '', mode: 'memory', pendingWrites: false, lastError: null },
@@ -2358,40 +2871,47 @@ const Settings = {
   reset() { Local.del(APP.SETTINGS_KEY); return Settings.load(); },
 };
 
-/* ═══════════ الجلسة: نفس آلية النسخة السابقة بدون أي تغيير جوهري ═══════════
+/* ═══════════ الجلسة: نفس آلية النسخة السابقة + بوابة دخول حقيقية ═══════════
    ملاحظة مهمة: واجهة تسجيل الدخول الخارجية تكتب نفس المفتاح 'cap_session'
-   في localStorage، ولذلك بقينا نقرأه كما هو وبنفس أسماء الحقول تمامًا.      */
+   في localStorage، ولذلك بقينا نقرأه كما هو وبنفس أسماء الحقول تمامًا.
+   الفرق في هذا الإصدار: لم تعد الجلسة التجريبية تُنشأ تلقائيًا — بدون جلسة
+   تظهر شاشة تسجيل الدخول/إنشاء الحساب، وأزرار «تسجيل الخروج» تعود إليها فعلًا. */
 const DEFAULT_SESSION_FIELDS = {
   walletBalance: 0, rating: 5.0, zoneRadiusKm: 4,
   totalTrips: 0, todayEarnings: 0, todayTrips: 0,
   weekEarnings: 0, monthEarnings: 0,
 };
 
-function loadSession() {
+function loadSession({ allowDemo = false } = {}) {
   let capSession = null;
   try { capSession = JSON.parse(localStorage.getItem(APP.SESSION_KEY) || 'null'); }
   catch (e) { log.warn('تعذّرت قراءة الجلسة المخزنة', String(e)); }
 
-  if (!capSession) {
-    // نفس الحساب التجريبي الذي كان في النسخة السابقة (يُستخدم عند عدم وجود تسجيل)
-    capSession = {
-      phone: "07800000001",
-      name: "كابتن سجاد علي",
-      carModel: "هيونداي إلنترا 2023",
-      carPlate: "ذي قار 48921 أجرة",
-      walletBalance: 25000,
-      rating: 5.0,
-      zoneRadiusKm: 4,
-      totalTrips: 0,
-      todayEarnings: 0,
-      todayTrips: 0,
-      weekEarnings: 0,
-      monthEarnings: 0,
-      lastResetDate: new Date().toDateString(),
-    };
-    localStorage.setItem(APP.SESSION_KEY, JSON.stringify(capSession));
-    log.info('تم إنشاء جلسة تجريبية محلية (لا يوجد تسجيل مسبق)');
+  if (!capSession || typeof capSession !== 'object' || !String(capSession.phone || '').trim()) {
+    capSession = null;
+    if (allowDemo) {
+      // نفس الحساب التجريبي الذي كان في النسخة السابقة (يُطلب الآن صراحةً فقط)
+      capSession = {
+        phone: "07800000001",
+        name: "كابتن سجاد علي",
+        carModel: "هيونداي إلنترا 2023",
+        carPlate: "ذي قار 48921 أجرة",
+        walletBalance: 25000,
+        rating: 5.0,
+        zoneRadiusKm: 4,
+        totalTrips: 0,
+        todayEarnings: 0,
+        todayTrips: 0,
+        weekEarnings: 0,
+        monthEarnings: 0,
+        lastResetDate: new Date().toDateString(),
+        demo: true,
+      };
+      localStorage.setItem(APP.SESSION_KEY, JSON.stringify(capSession));
+      log.info('تم تفعيل وضع التجربة (جلسة محلية بدون تسجيل)');
+    }
   }
+  if (!capSession) { State.authed = false; return null; }
 
   // تهيئة الحقول الجديدة فقط (إضافة — لا حذف ولا استبدال لأي حقل قائم)
   capSession = { ...DEFAULT_SESSION_FIELDS, ...capSession };
@@ -2407,6 +2927,7 @@ function loadSession() {
   if (!capSession.targets) capSession.targets = { trips: State.settings.dailyTargetTrips, earnings: State.settings.dailyTargetEarnings };
 
   State.session = capSession;
+  State.authed = true;
   State.counters.accepted = Number(capSession.stats.acceptedCount) || 0;
   State.counters.declined = Number(capSession.stats.declinedCount) || 0;
   State.counters.missed = Number(capSession.stats.missedCount) || 0;
@@ -2415,6 +2936,7 @@ function loadSession() {
 }
 
 function saveSession(patch = {}) {
+  if (!State.authed && !patch.__force) return State.session;   // بعد تسجيل الخروج نمنع إعادة إنشاء الجلسة
   State.session = { ...State.session, ...patch };
   State._localSaveAt = Date.now();   // لحماية البيانات المحلية من لقطة سحابة أقدم
   try { localStorage.setItem(APP.SESSION_KEY, JSON.stringify(State.session)); }
@@ -2424,6 +2946,414 @@ function saveSession(patch = {}) {
 }
 const getSession = () => State.session || {};
 const sessionPhone = () => String(getSession().phone || '').trim();
+
+/* ═══════════════ البوابة: تسجيل الدخول وإنشاء الحساب ═══════════════
+   الحسابات تُحفظ محليًا (كلمة المرور مشفّرة SHA-256 بمِلح خاص — لا نص صريح)،
+   وملف الكابتن يُزامَن في مجموعة captains بنفس أسماء الحقول القديمة.
+   عند توفّر الاتصال يُتحقَّق من authHash داخل مستند الكابتن، فيمكن الدخول من
+   أي جهاز آخر بنفس الرقم. الواجهة الخارجية (إن كانت تستخدم cap_session) ما
+   زالت تعمل كما هي: أي جلسة مكتوبة في هذا المفتاح = دخول مباشر.            */
+const Auth = {
+  busy: false,
+  tab: 'login',
+
+  /* أرقام هندية → إنجليزية + توحيد الصيغة العراقية (07XXXXXXXXX) */
+  normPhone(v) {
+    const ar = '٠١٢٣٤٥٦٧٨٩';
+    let s = String(v || '').replace(/[٠-٩]/g, d => String(ar.indexOf(d))).replace(/\D/g, '');
+    if (s.startsWith('00964')) s = s.slice(5);
+    if (s.startsWith('964')) s = s.slice(3);
+    if (s.length === 10 && s[0] === '7') s = '0' + s;
+    return s;
+  },
+  validPhone(p) { return /^07\d{9}$/.test(String(p || '')); },
+
+  accounts() { const a = Local.get(APP.ACCOUNTS_KEY, null); return a && typeof a === 'object' ? a : {}; },
+  saveAccounts(map) { return Local.set(APP.ACCOUNTS_KEY, map); },
+
+  async hash(text, salt) {
+    const input = `cap1$${salt}$${text}`;
+    try {
+      if (window.crypto?.subtle && (window.isSecureContext || location.hostname === 'localhost')) {
+        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
+        return 's256:' + Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+    } catch (e) { log.warn('WebCrypto غير متاح — تم استخدام التجزئة المحلية', String(e?.message || e)); }
+    // بديل محلي (FNV-1a مع مرورين) للمنفذ file:// أو متصفحات بلا WebCrypto
+    let h1 = 0x811c9dc5, h2 = 0x01000193;
+    for (let i = 0; i < input.length; i++) {
+      const c = input.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+      h2 = Math.imul(h2 + c + i, 0x85ebca6b) >>> 0;
+    }
+    return 'fnv:' + h1.toString(16) + h2.toString(16);
+  },
+  async verify(stored, text, salt) {
+    if (!stored || !text) return false;
+    return (await Auth.hash(String(text), salt || '')) === String(stored);
+  },
+
+  /* ── عرض/إخفاء الشاشة ─────────────────────────────────────────────── */
+  show(reason = null) {
+    const el = $('#auth');
+    if (!el) { log.error('شاشة الدخول غير موجودة في الصفحة'); return; }
+    document.body.classList.add('auth-on');
+    el.classList.add('show');
+    el.scrollTop = 0;
+    const ver = $('#authVer'); if (ver) ver.textContent = APP.version;
+    Auth.updateNet();
+    if (reason) {
+      const msgs = {
+        logged_out: ['good', '✓ خرجت بأمان. نراك قريبًا 👋'],
+        expired: ['bad', '⏱️ انتهت صلاحية الجلسة — سجّل الدخول من جديد.'],
+        offline_only: ['bad', '⚠️ لا يوجد اتصال ولا يوجد حساب محفوظ على هذا الجهاز.'],
+      };
+      const [cls, txt] = msgs[reason] || ['', ''];
+      if (txt) Auth.msg(cls, txt);
+    }
+    // تركيز حقل الرقم بعد ظهور الشاشة (مع احترام تقليل الحركة)
+    setTimeout(() => { const f = $(`#auth${Auth.tab === 'signup' ? 'Name' : 'LoginPhone'}`); if (f && window.matchMedia?.('(pointer: fine)').matches) f.focus({ preventScroll: true }); }, 260);
+  },
+  hide() {
+    document.body.classList.remove('auth-on');
+    $('#auth')?.classList.remove('show');
+  },
+  msg(kind, html) {
+    const m = $('#authMsg'); if (!m) return;
+    if (!html) { m.className = 'auth-msg'; m.innerHTML = ''; return; }
+    m.className = `auth-msg show ${kind === 'good' ? 'good' : 'bad'}`;
+    m.innerHTML = `<span>${kind === 'good' ? '✅' : '⚠️'}</span><span>${html}</span>`;
+  },
+  switchTab(tab) {
+    Auth.tab = tab === 'signup' ? 'signup' : 'login';
+    $$('#auth .auth-tab').forEach(b => {
+      const on = b.dataset.tab === Auth.tab;
+      b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on));
+    });
+    $('#formLogin')?.classList.toggle('active', Auth.tab === 'login');
+    $('#formSignup')?.classList.toggle('active', Auth.tab === 'signup');
+    Auth.msg('', '');
+    $$('#auth .auth-io').forEach(i => i.classList.remove('err'));
+  },
+  updateNet() {
+    const chip = $('#authNetChip'); if (!chip) return;
+    const on = navigator.onLine !== false;
+    chip.innerHTML = `<span class="status-dot${on ? ' online' : ''}"></span><span>${on ? 'متصل — التحقق من الحسابات يعمل' : 'بدون إنترنت — الدخول متاح للحسابات المحفوظة على هذا الجهاز'}</span>`;
+  },
+  fieldErr(id, bad = true) { $('#' + id)?.classList.toggle('err', !!bad); },
+  prefill({ phone = '', name = '', carModel = '', carPlate = '' } = {}) {
+    if (phone) { const a = $('#authLoginPhone'); const b = $('#authPhone'); if (b) b.value = phone; if (a && Auth.tab === 'signup') a.value = phone; }
+    if (name) { const e = $('#authName'); if (e) e.value = name; }
+    if (carModel) { const e = $('#authCar'); if (e) e.value = carModel; }
+    if (carPlate) { const e = $('#authPlate'); if (e) e.value = carPlate; }
+  },
+
+  /* ── جلسة الدخول ──────────────────────────────────────────────────── */
+  async enter(payload, { note = '' } = {}) {
+    const session = {
+      ...DEFAULT_SESSION_FIELDS,
+      phone: payload.phone,
+      name: payload.name || 'كابتن',
+      carModel: payload.carModel || '',
+      carPlate: payload.carPlate || '',
+      walletBalance: Number(payload.walletBalance) || 0,
+      rating: Number(payload.rating) || 5,
+      zoneRadiusKm: Number(payload.zoneRadiusKm) || 0,
+      totalTrips: Number(payload.totalTrips) || 0,
+      todayEarnings: Number(payload.todayEarnings) || 0,
+      todayTrips: Number(payload.todayTrips) || 0,
+      weekEarnings: Number(payload.weekEarnings) || 0,
+      monthEarnings: Number(payload.monthEarnings) || 0,
+      lastResetDate: new Date().toDateString(),
+      ...(payload.demo ? { demo: true } : {}),
+      ...(note ? { loginNote: note } : {}),
+    };
+    try { localStorage.setItem(APP.SESSION_KEY, JSON.stringify(session)); }
+    catch (e) { Auth.msg('bad', 'تعذّر حفظ الجلسة على هذا الجهاز — تحقّق من إعدادات المتصفح (التخزين المحلي).'); return false; }
+    State.session = session; State.authed = true;
+    Auth.remember(session.phone);
+    Auth.msg('good', '✓ تم الدخول — جاري فتح لوحة الكابتن…');
+    log.ok(`دخول الكابتن ${session.phone}`);
+    playSuccessSound?.(); haptic('success');
+    setTimeout(() => location.reload(), 520);
+    return true;
+  },
+
+  /* ── إنشاء حساب ────────────────────────────────────────────────────── */
+  async signup() {
+    if (Auth.busy) return false;
+    const name = ($('#authName')?.value || '').trim();
+    const phone = Auth.normPhone($('#authPhone')?.value);
+    const carModel = ($('#authCar')?.value || '').trim();
+    const carPlate = ($('#authPlate')?.value || '').trim();
+    const pass = String($('#authPass')?.value || '');
+    const pass2 = String($('#authPass2')?.value || '');
+    const zoneRadiusKm = Number($('#authZone')?.value || 0) || 0;
+    ['authName', 'authPhone', 'authCar', 'authPass', 'authPass2'].forEach(id => Auth.fieldErr(id, false));
+
+    if (name.length < 3) { Auth.fieldErr('authName'); return Auth.fail('اكتب الاسم الكامل (٣ أحرف على الأقل).', 'authName'); }
+    if (!Auth.validPhone(phone)) { Auth.fieldErr('authPhone'); return Auth.fail('رقم الهاتف غير صحيح — المطلوب ١١ خانية يبدأ بـ 07.', 'authPhone'); }
+    if (carModel.length < 3) { Auth.fieldErr('authCar'); return Auth.fail('اكتب نوع وموديل المركبة.', 'authCar'); }
+    if (pass.length < 6) { Auth.fieldErr('authPass'); return Auth.fail('كلمة المرور يجب ألّا تقل عن ٦ أحرف.', 'authPass'); }
+    if (pass !== pass2) { Auth.fieldErr('authPass2'); return Auth.fail('كلمتا المرور غير متطابقتين.', 'authPass2'); }
+
+    Auth.busy = true; Auth.msg('', '⏳ جاري إنشاء الحساب…');
+    const map = Auth.accounts();
+    if (map[phone]) {
+      Auth.busy = false;
+      Auth.switchTab('login');
+      const p = $('#authLoginPhone'); if (p) p.value = phone;
+      return Auth.fail('يوجد حساب مسجّل بهذا الرقم فعلًا — سجّل الدخول أو استعد كلمة المرور.', 'authLoginPhone');
+    }
+    const salt = uid('s').slice(2);
+    const passHash = await Auth.hash(pass, salt);
+    const walletBalance = Number($('#authWallet')?.value) || 0;
+    const acc = { phone, name, carModel, carPlate, zoneRadiusKm, salt, passHash, createdAt: Date.now(), updatedAt: Date.now() };
+    map[phone] = acc; Auth.saveAccounts(map);
+
+    // تسجيل ملف الكابتن في قاعدة البيانات: حقول إضافية فقط — لا حذف ولا تعديل للحقول القائمة
+    try {
+      if (await DB.init()) {
+        State.session = { ...DEFAULT_SESSION_FIELDS, phone, name, carModel, carPlate, zoneRadiusKm };
+        State.authed = true;
+        const res = await DB.saveCaptain({
+          phone, name, carModel, carPlate, zoneRadiusKm,
+          isOnline: false, lastSeenMs: Date.now(), createdAtMs: Date.now(),
+          authHash: passHash, authSalt: salt, appVersion: APP.version,
+        });
+        if (!res?.ok) log.info('مستند الكابتن سيُنشأ عند أول مزامنة (القاعدة غير متاحة الآن)');
+      }
+    } catch (e) { log.warn('تعذّر إنشاء مستند الكابتن — سيُزامَن لاحقًا', String(e?.message || e)); }
+
+    Auth.busy = false;
+    Toast.success?.('تم إنشاء الحساب ✓');
+    return Auth.enter({ ...acc, walletBalance, totalTrips: 0 });
+  },
+
+  fail(text, focusId) {
+    Toast.error?.(text); playErrorSound?.(); haptic('error');
+    if (focusId) setTimeout(() => $('#' + focusId)?.focus?.({ preventScroll: true }), 60);
+    Auth.msg('bad', text);
+    return false;
+  },
+
+  /* ── دخول ──────────────────────────────────────────────────────────── */
+  async login() {
+    if (Auth.busy) return false;
+    const phone = Auth.normPhone($('#authLoginPhone')?.value);
+    const pass = String($('#authLoginPass')?.value || '');
+    Auth.fieldErr('authLoginPhone', false); Auth.fieldErr('authLoginPass', false);
+    if (!Auth.validPhone(phone)) { Auth.fieldErr('authLoginPhone'); return Auth.fail('أدخل رقم هاتف صحيح (١١ خانية يبدأ بـ 07).', 'authLoginPhone'); }
+    if (!pass) { Auth.fieldErr('authLoginPass'); return Auth.fail('أدخل كلمة المرور.', 'authLoginPass'); }
+
+    Auth.busy = true; Auth.msg('', '⏳ جاري التحقق من الحساب…');
+    const map = Auth.accounts();
+    const acc = map[phone];
+
+    // 1) حساب محفوظ على هذا الجهاز
+    if (acc) {
+      let okHash = await Auth.verify(acc.passHash, pass, acc.salt);
+      let remote = null;
+      try {
+        if (await DB.init()) {
+          const snap = await FS.getDoc(FS.doc(db, 'captains', phone));
+          if (snap?.exists?.()) remote = snap.data() || {};
+        }
+      } catch (e) { log.info('تحقق سحابي غير متاح — تم الاعتماد على التحقق المحلي'); }
+      if (!okHash && remote?.authHash) okHash = await Auth.verify(remote.authHash, pass, remote.authSalt);
+      if (!okHash) { Auth.busy = false; Auth.fieldErr('authLoginPass'); return Auth.fail('كلمة المرور غير صحيحة.', 'authLoginPass'); }
+      const merged = { ...acc, ...(remote || {}), phone, name: remote?.name || acc.name, carModel: remote?.carModel || acc.carModel, carPlate: remote?.carPlate || acc.carPlate };
+      Auth.busy = false;
+      return Auth.enter(merged);
+    }
+
+    // 2) لا حساب محلي — نتحقق من مستند الكابتن في السحابة (دخول من جهاز جديد)
+    let remote = null, reached = false;
+    try {
+      if (await DB.init()) {
+        reached = true;
+        const snap = await FS.getDoc(FS.doc(db, 'captains', phone));
+        if (snap?.exists?.()) remote = snap.data() || {};
+      }
+    } catch (e) { log.warn('استعلام الدخول فشل', String(e?.message || e)); }
+
+    if (remote?.authHash && remote?.authSalt) {
+      const okRemote = await Auth.verify(remote.authHash, pass, remote.authSalt);
+      if (!okRemote) { Auth.busy = false; Auth.fieldErr('authLoginPass'); return Auth.fail('كلمة المرور غير صحيحة لهذا الحساب.', 'authLoginPass'); }
+      map[phone] = { phone, name: remote.name || 'كابتن', carModel: remote.carModel || '', carPlate: remote.carPlate || '', salt: remote.authSalt, passHash: remote.authHash, createdAt: Date.now(), updatedAt: Date.now() };
+      Auth.saveAccounts(map);
+      Auth.busy = false;
+      return Auth.enter({ ...remote, ...map[phone], phone });
+    }
+
+    Auth.busy = false;
+    if (remote) {
+      // الرقم مسجّل لدى الإدارة بلا كلمة مرور (تسجيل قديم) → نعيّن كلمة ونربط الحساب
+      Auth.switchTab('signup');
+      Auth.prefill({ phone, name: remote.name || '', carModel: remote.carModel || '', carPlate: remote.carPlate || '' });
+      if (Number(remote.walletBalance)) $('#authWallet') && ($('#authWallet').value = remote.walletBalance);
+      return Auth.fail('هذا الرقم مسجّل مسبقًا بدون كلمة مرور داخل النظام. عيّن كلمة مرور لتفعيل دخولك — بياناتك ومحفظتك لن تُحذف.');
+    }
+    if (!reached) return Auth.fail('لا يوجد حساب محفوظ على هذا الجهاز لهذا الرقم، وتعذّر الوصول للخادم للتحقق. توصّل بالإنترنت ثم أعد المحاولة، أو أنشئ حسابًا جديدًا.');
+    Auth.switchTab('signup');
+    Auth.prefill({ phone });
+    return Auth.fail('لا يوجد كابتن مسجّل بهذا الرقم — أنشئ حسابًا جديدًا الآن وسيُسجَّل في قاعدة البيانات.');
+  },
+
+  /* ── استعادة كلمة المرور (بمطابقة رقم اللوحة) ───────────────────────── */
+  async resetPass() {
+    const phone = Auth.normPhone($('#authResetPhone')?.value || $('#authLoginPhone')?.value || $('#authPhone')?.value);
+    if (!Auth.validPhone(phone)) { Auth.switchTab('login'); return Auth.fail('اكتب رقم الهاتف أولًا في خانة الرقم ثم اختر «نسيت كلمة المرور».', 'authLoginPhone'); }
+    const acc = Auth.accounts()[phone];
+    const pass = String($('#authResetPass')?.value || '');
+    const plate = String($('#authResetPlate')?.value || '').trim();
+    if (pass.length < 6) return Auth.fail('كلمة المرور الجديدة قصيرة (٦ أحرف على الأقل).', 'authResetPass');
+    let knownPlate = acc?.carPlate || '';
+    if (!knownPlate) {
+      try {
+        if (await DB.init()) {
+          const snap = await FS.getDoc(FS.doc(db, 'captains', phone));
+          knownPlate = snap?.exists?.() ? (snap.data()?.carPlate || '') : '';
+        }
+      } catch { }
+    }
+    if (!knownPlate) {
+      openSheet({
+        title: 'استعادة كلمة المرور', headIcon: '🔐',
+        body: `<div class="small muted" style="line-height:2;">لا توجد بيانات كافية للتحقق على هذا الجهاز. تواصل مع الدعم لتصفير كلمة المرور:
+               <a class="btn sm gold block" style="margin-top:12px;" href="${waLink(APP.SUPPORT_PHONE, `استعادة كلمة مرور الكابتن ${phone}`)}" target="_blank" rel="noopener">💬 راسل الدعم على واتساب</a>`,
+        foot: `<button class="btn ghost grow" data-sheet-close>إغلاق</button>`,
+      });
+      return false;
+    }
+    if (plate.replace(/\s+/g, '').toLowerCase() !== String(knownPlate).replace(/\s+/g, '').toLowerCase()) {
+      const f = $('#authResetPlate'); f?.classList.add('err');
+      return Auth.fail('رقم اللوحة غير مطابق للمسجّل في النظام.', 'authResetPlate');
+    }
+    const salt = uid('s').slice(2);
+    const map = Auth.accounts();
+    const passHash = await Auth.hash(pass, salt);
+    map[phone] = { ...(map[phone] || { phone, name: acc?.name || 'كابتن', createdAt: Date.now() }), salt, passHash, updatedAt: Date.now() };
+    Auth.saveAccounts(map);
+    try {
+      if (await DB.init()) {
+        const prev = State.session; const prevAuthed = State.authed;
+        State.authed = true; State.session = { ...(prev || {}), phone };
+        await DB.saveCaptain({ authHash: passHash, authSalt: salt, phone });
+        State.session = prev; State.authed = prevAuthed;
+      }
+    } catch (e) { log.warn('تعذّر تحديث كلمة المرور في السحابة', String(e?.message || e)); }
+    Auth.closeTopLayer();
+    Auth.switchTab('login');
+    const p = $('#authLoginPhone'); if (p) p.value = phone;
+    return Auth.enter(map[phone]);
+  },
+
+  /* ── إغلاق التطبيق (خروج حقيقي يرجع لشاشة الدخول) ───────────────────── */
+  async logout({ silent = false } = {}) {
+    try {
+      if (State.shift.active) await Shift.stop();
+    } catch { }
+    try { Radar.stop(); } catch { }
+    try { Geo.stop(); } catch { }
+    try { Online.toggle(false, { force: true }); } catch { }
+    try { DB.unsubscribeAll(); } catch { }
+    try { WakeLock?.release?.(); } catch { }
+    try { clearInterval(State.bootTimer); State.bootTimer = null; } catch { }
+    try { clearInterval(TripPanel.timer); TripPanel.timer = null; } catch { }
+    try { clearInterval(Shift._t); Shift._t = null; } catch { }
+    try { clearInterval(ShiftsView._t); ShiftsView._t = null; } catch { }
+    try { $('#sheetRoot').innerHTML = ''; $('#modalRoot').innerHTML = ''; } catch { }
+    try {
+      MapView.clearActive(); MapView.clearPreview(); MapView.drawHeat([]);
+      if (MapView.carMarker) { MapView.map?.removeLayer(MapView.carMarker); MapView.carMarker = null; }
+      if (MapView.zoneLayer) { MapView.map?.removeLayer(MapView.zoneLayer); MapView.zoneLayer = null; }
+    } catch { }
+    try {
+      $('#incomingOrderSheet')?.classList.remove('show');
+      $('#activeTripPanel')?.classList.remove('show');
+      $('#sharedDock')?.classList.remove('show');
+      $('#btnModeShared')?.setAttribute('aria-pressed', 'false');
+    } catch { }
+    State.session = null;
+    State.authed = false;
+    State.ui.online = false; State.ui.sharedMode = false;
+    State.trip.active = null; State.trip.stage = null;
+    State.shift.active = null;
+    State.counters = { accepted: 0, declined: 0, missed: 0, cancelled: 0 };
+    try { localStorage.removeItem(APP.SESSION_KEY); } catch { }
+    if (!silent) {
+      Auth.show('logged_out');
+      Router.go('map', { silent: true });
+      Header.render();
+    }
+    log.info('تم تسجيل الخروج');
+    return true;
+  },
+
+  closeTopLayer() {
+    for (let i = 0; i < 4 && Layers.count(); i++) Layers.top()?.close?.();
+    if (!Layers.count()) { try { delete document.body.dataset.locked; } catch { } $('#backdrop')?.classList.remove('show'); }
+  },
+
+  /* نافذة استعادة كلمة المرور (مطابقة رقم اللوحة) */
+  openReset() {
+    const phone = Auth.normPhone($('#authLoginPhone')?.value);
+    openSheet({
+      title: 'استعادة كلمة المرور', headIcon: '🔐', subtitle: phone ? `الحساب: ${phone}` : 'أدخل رقمك ثم بيانات المركبة',
+      body: `
+        <div class="field"><label class="label" for="authResetPhone">رقم الهاتف</label>
+          <input class="auth-io mono" id="authResetPhone" dir="ltr" inputmode="tel" value="${esc(phone)}" placeholder="07xxxxxxxxx"></div>
+        <div class="field"><label class="label" for="authResetPlate">رقم اللوحة (للتحقق) <span class="req">*</span></label>
+          <input class="auth-io" id="authResetPlate" placeholder="مثال: ذي قار 48921 أجرة"></div>
+        <div class="field"><label class="label" for="authResetPass">كلمة المرور الجديدة <span class="req">*</span></label>
+          <input class="auth-io" id="authResetPass" type="password" placeholder="٦ أحرف على الأقل"></div>
+        <div class="hint-txt">🛡️ نطلب رقم اللوحة لأنه المعرّف المتاح داخل التطبيق بدون بريد إلكتروني. إن لم يتطابق، راسل الدعم ليصفّر لك كلمة المرور.</div>`,
+      foot: `<button class="btn ghost grow" data-sheet-close>إلغاء</button>
+             <button class="btn primary grow" id="btnResetGo">تعيين الجديدة ✓</button>`,
+      onMount: (layer, el) => {
+        $('#authResetPhone', el)?.addEventListener('input', (e) => { e.target.value = Auth.normPhone(e.target.value); });
+        $('#btnResetGo', el)?.addEventListener('click', async () => {
+          const v = $('#authResetPhone', el)?.value; if (v) { const f = $('#authLoginPhone'); if (f) f.value = v; const g = $('#authPhone'); if (g) g.value = v; }
+          const ok = await Auth.resetPass();
+          if (ok !== false) layer.close();
+        });
+      },
+    });
+  },
+
+  /* ربط نماذج الدخول بالأحداث */
+  bind() {
+    const root = $('#auth'); if (!root || root.dataset.bound === '1') return;
+    root.dataset.bound = '1';
+    $('#formLogin')?.addEventListener('submit', (e) => { e.preventDefault(); Auth.login(); });
+    $('#formSignup')?.addEventListener('submit', (e) => { e.preventDefault(); Auth.signup(); });
+    $('#authLoginPhone')?.addEventListener('input', (e) => { const v = Auth.normPhone(e.target.value); if (v !== e.target.value) { const p = e.target.selectionStart; e.target.value = v; } });
+    $('#authPhone')?.addEventListener('input', (e) => { const v = Auth.normPhone(e.target.value); if (v !== e.target.value) e.target.value = v; });
+    $('#authRemember')?.addEventListener('change', (e) => Local.set('cap_remember', e.target.checked));
+    const last = Local.get('cap_last_phone', '');
+    if (last) { const f = $('#authLoginPhone'); if (f) f.value = last; }
+    window.addEventListener('online', () => Auth.updateNet());
+    window.addEventListener('offline', () => Auth.updateNet());
+
+    // لوحة المفاتيح: نجعل الحقل المرئي في المنتصف حتى لا يغطيه الكيبورد (آيفون/أندرويد)
+    root.addEventListener('focusin', (e) => {
+      const t = e.target;
+      if (!t || !t.matches || !t.matches('.auth-io')) return;
+      const lift = () => { try { t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch { t.scrollIntoView(); } };
+      setTimeout(lift, 260); setTimeout(lift, 620);
+    });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        const kb = Math.max(0, window.innerHeight - (window.visualViewport.height || window.innerHeight));
+        root.style.paddingBottom = kb > 40 ? `${kb + 12}px` : '';
+      });
+    }
+    // مقاس الشاشة يدور؟ نحدّث موضع الخريطة فور رجوع الدخول
+    window.addEventListener('resize', debounce(() => { try { MapView.map?.invalidateSize({ pan: false }); } catch { } }, 220), { passive: true });
+  },
+  remember(phone) { try { if ($('#authRemember')?.checked !== false) Local.set('cap_last_phone', phone); else Local.del('cap_last_phone'); } catch { } },
+};
 
 /* إعادة ضبط عدّادات اليوم عند تغيّر التاريخ (نفس منطق النسخة السابقة + توسيع) */
 function resetDailyStats() {
@@ -2528,6 +3458,7 @@ const DB = {
   unsubs: [],
 
   async init() {
+    if (DB.ready && db) return true;   // شاشة الدخول قد تهيّئها قبل الإقلاع
     const loaded = await loadFirebase();
     if (!loaded) {
       State.db.available = false;
@@ -2976,8 +3907,9 @@ const Queue = {
 function UI_syncHud() {
   const hud = $('#syncHud'); if (!hud) return;
   const txt = $('#syncHudTxt');
-  if (!State.db.available) { hud.classList.remove('hidden'); hud.querySelector('.dot').className = 'dot bad'; txt.textContent = 'لا يوجد اتصال بالسحابة'; return; }
-  if (State.db.pendingWrites) { hud.classList.remove('hidden'); hud.querySelector('.dot').className = 'dot mid'; txt.textContent = 'بانتظار المزامنة…'; return; }
+  const dot = hud.querySelector('.dot');
+  if (!State.db.available) { hud.classList.remove('hidden'); if (dot) dot.className = 'dot bad'; if (txt) txt.textContent = 'لا يوجد اتصال بالسحابة'; return; }
+  if (State.db.pendingWrites) { hud.classList.remove('hidden'); if (dot) dot.className = 'dot mid'; if (txt) txt.textContent = 'بانتظار المزامنة…'; return; }
   hud.classList.add('hidden');
 }
 /* ═══════════════════════ [7] الخريطة والموقع والمسارات ═══════════════════════ */
@@ -2990,61 +3922,142 @@ const MapView = {
   rotation: 0, userInteractedAt: 0, ready: false, style: 'standard',
 
   async init() {
+    if (MapView.map && MapView.ready) return true;
+    if (MapView.map) { try { MapView.map.remove(); } catch { } MapView.map = null; }
     const L = await loadLeaflet();
     ensureLeafletCss();
-    if (!L || !$('#map')) {
+    const el = $('#map');
+    if (!L || !el) {
       MapView.ready = false;
       log.error('الخريطة غير متاحة في هذا المتصفح');
+      $('#mapFallback')?.classList.add('show');
       Bus.emit('map:unavailable');
       return false;
     }
     try {
-      MapView.map = L.map('map', {
+      MapView.map = L.map(el, {
         zoomControl: false, preferCanvas: true, attributionControl: false,
-        minZoom: 5, maxZoom: 19, zoomSnap: 0.5, wheelPxPerZoomLevel: 90,
-      }).setView([State.live.coords.lat, State.live.coords.lng], 15);
+        minZoom: 5, maxZoom: 20,
+        zoomSnap: 0.25, zoomDelta: 1, wheelPxPerZoomLevel: 70, wheelDebounceTime: 24,
+        // سحب/تكبير سلس على اللمس — هذه الخيارات هي ما يجعل الخريطة «تتتح» فعليًا
+        dragging: L.Browser.mobile ? true : true, inertia: true, inertiaDeceleration: 2400,
+        inertiaMaxSpeed: 2600, easeLinearity: 0.22,
+        tap: true, touchZoom: true, bounceAtZoomLimits: false,
+        scrollWheelZoom: 'center', doubleClickZoom: 'center', boxZoom: true, keyboard: true,
+        trackResize: true, zoomAnimation: !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
+        fadeAnimation: true, markerZoomAnimation: true, zoomAnimationThreshold: 5,
+        worldCopyJump: false, maxBoundsViscosity: 0.6,
+      }).setView([State.live.coords.lat, State.live.coords.lng], MapView.startZoom());
 
-      MapView.map.on('dragstart', () => { MapView.userInteractedAt = Date.now(); });
-      MapView.map.on('zoomstart', () => { MapView.userInteractedAt = Date.now(); });
+      const markInteract = () => { MapView.userInteractedAt = Date.now(); };
+      MapView.map.on('dragstart', markInteract);
+      MapView.map.on('zoomstart', markInteract);
+      MapView.map.on('mousedown', markInteract);
       MapView.map.on('click', () => Bus.emit('map:click'));
+      el.addEventListener('gesturestart', (e) => e.preventDefault()); // منع تكبير الصفحة على iOS فوق الخريطة
+
+      // إعادة القياس عند تغيير الأبعاد/الدوران حتى لا تظهر الخريطة رمادية أو مقطوعة
+      const onResize = () => {
+        if (!MapView.map) return;
+        try { MapView.map.invalidateSize({ pan: false }); } catch { }
+        setTimeout(() => { try { MapView.map?.invalidateSize({ pan: false }); } catch { } }, 220);
+      };
+      if (!MapView._resizeBound) {
+        MapView._resizeBound = true;
+        window.addEventListener('resize', debounce(onResize, 160), { passive: true });
+        window.addEventListener('orientationchange', () => { setTimeout(onResize, 240); setTimeout(onResize, 780); });
+        window.visualViewport?.addEventListener('resize', debounce(onResize, 200), { passive: true });
+        Bus.on('view:changed', () => setTimeout(onResize, 90));
+        document.addEventListener('fullscreenchange', () => setTimeout(onResize, 300));
+      }
 
       MapView.setTiles(State.settings.mapStyle || 'standard');
       MapView.heat.group = L.layerGroup().addTo(MapView.map);
       MapView.ready = true;
+      el.classList.add('ready');
+      $('#mapFallback')?.classList.remove('show');
       MapView.drawZone();
+      MapView.syncFollowBtn();
       log.ok('الخريطة جاهزة');
+      setTimeout(() => { try { MapView.map.invalidateSize({ pan: false }); } catch { } }, 260);
       Bus.emit('map:ready', MapView.map);
       return true;
     } catch (e) {
       log.error('فشل تهيئة الخريطة', String(e?.message || e));
-      MapView.ready = false; return false;
+      MapView.ready = false;
+      $('#mapFallback')?.classList.add('show');
+      Bus.emit('map:unavailable');
+      return false;
     }
   },
 
+  /* مستوى تقريب مناسب لحجم الشاشة: لوحي/سطح مكتب يرى سياقًا أوسع */
+  startZoom() {
+    const w = window.innerWidth || 380;
+    if (w >= 1360) return 14;
+    if (w >= 1024) return 14.5;
+    if (w >= 700) return 15;
+    return 16;
+  },
+
+  /* اختيار البلاطات الفعلية حسب النمط والمظهر (بلا فلاتر تُفقِد الخريطة وضوحها) */
+  resolveStyle(style = State.settings.mapStyle || 'standard') {
+    const dark = (document.documentElement.getAttribute('data-theme') || 'dark') === 'dark';
+    let key = style;
+    let filter = 'none';
+    if (style === 'standard' && dark) { key = 'dark'; filter = 'none'; }
+    const conf = TILE_LAYERS[key] || TILE_LAYERS.standard;
+    // إن كانت البلاطات الداكنة متعثرة نرجع لخريطة الشوارع مع فلطرة عكسية
+    return { key, conf, filter, needsInvert: key === 'dark' && MapView._cartoDown === true };
+  },
+
   setTiles(style) {
-    if (!MapView.map) { Settings.save({ mapStyle: style }); return; }
     const L = window.L;
-    const conf = TILE_LAYERS[style] || TILE_LAYERS.standard;
+    if (!L) { Settings.save({ mapStyle: style }); return; }
+    let { key, conf, filter } = MapView.resolveStyle(style);
+    if (MapView._cartoDown && key === 'dark') { conf = TILE_LAYERS.standard; filter = 'invert'; }
     MapView.style = style;
-    Settings.save({ mapStyle: style });
+    if (!MapView.map) {
+      document.documentElement.dataset.mapStyle = filter === 'invert' ? 'invert' : (key === 'light' ? 'light' : 'none');
+      return;
+    }
     try { if (MapView.layer) MapView.map.removeLayer(MapView.layer); } catch { }
     MapView.layer = L.tileLayer(conf.url, {
-      maxZoom: conf.maxZoom || 19, minZoom: 3, updateWhenIdle: true,
-      keepBuffer: 3, crossOrigin: true, attribution: '',
+      maxZoom: conf.maxZoom || 19, minZoom: 3,
+      updateWhenIdle: false, updateWhenZooming: true, keepBuffer: 4,
+      detectRetina: true, tileSize: 256, zoomOffset: 0,
+      crossOrigin: true, attribution: '',
       errorTileUrl: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="%230b1122"/></svg>',
     }).addTo(MapView.map);
     // مصدر بديل عند فشل البلاطات
     let errored = 0;
     MapView.layer.on('tileerror', () => {
       errored++;
-      if (errored === 12 && conf.fallback && MapView.layer?._url !== conf.fallback) {
+      if (key === 'dark' || key === 'light') { if (errored === 6) { MapView._cartoDown = true; MapView.setTiles(style); } return; }
+      if (errored === 10 && conf.fallback && MapView.layer?._url !== conf.fallback) {
         log.warn('فشل مصدر البلاطات — تحويل إلى المصدر البديل');
         MapView.layer.setUrl(conf.fallback);
       }
+      if (errored === 18) $('#mapFallback')?.classList.add('show');
     });
-    document.documentElement.dataset.mapStyle =
-      (style === 'dark' || (style === 'standard' && State.ui.theme === 'dark')) ? 'dark' : 'light';
+    MapView.layer.on('tileload', () => { if (errored) { errored = 0; $('#mapFallback')?.classList.remove('show'); } });
+    document.documentElement.dataset.mapStyle = filter === 'invert' ? 'invert' : (key === 'light' ? 'light' : 'none');
     Bus.emit('map:tiles', style);
+  },
+
+  zoomBy(delta) {
+    if (!MapView.ready) return;
+    MapView.userInteractedAt = Date.now();
+    try { MapView.map.setZoom(Math.round((MapView.map.getZoom() + delta) / 0.25) * 0.25, { animate: true }); } catch { }
+    haptic('tick');
+  },
+
+  syncFollowBtn() {
+    const b = $('#btnFollow'); if (!b) return;
+    const on = !!State.settings.autoRecenter;
+    b.classList.toggle('primary', on);
+    b.querySelector('.fab-tip') && (b.querySelector('.fab-tip').textContent = on ? 'تتبّع: يعمل' : 'تتبّع: متوقف');
+    b.setAttribute('aria-pressed', String(on));
   },
 
   carIcon(bearing = 0) {
@@ -6304,9 +7317,7 @@ const Theme = {
     document.documentElement.setAttribute('data-theme', effective);
     State.ui.theme = effective;
     const btn = $('#btnToggleTheme'); if (btn) btn.textContent = effective === 'dark' ? '☀️' : '🌙';
-    if (MapView.ready && State.settings.mapStyle === 'standard') {
-      document.documentElement.dataset.mapStyle = effective === 'dark' ? 'dark' : 'light';
-    }
+    if (MapView.ready) { try { MapView.setTiles(State.settings.mapStyle || 'standard'); } catch { } }
     Bus.emit('theme:changed', effective);
   },
   toggle() {
@@ -6604,6 +7615,7 @@ const Router = {
     if (State.ui.subView) { $('#view-sub').classList.remove('active'); State.ui.subView = null; }
 
     const isMap = view === 'map';
+    document.body.classList.toggle('view-map', isMap);
     $$('.view').forEach(v => v.classList.toggle('active', v.id === `view-${view}`));
     $$('#bottomNav .nav-item').forEach(b => {
       const on = b.dataset.view === view;
@@ -6788,7 +7800,7 @@ const Actions = {
   'logout': async () => {
     const ok = await confirmDialog({
       title: 'تسجيل الخروج', danger: true, icon: '🚪', confirmText: 'نعم، خروج',
-      message: 'سيُحذف الجلسة المحلية من هذا الجهاز (بياناتك في قاعدة البيانات تبقى محفوظة).<br>تحتاج تسجيل الدخول مرة أخرى للعودة.',
+      message: 'سيُحذف الجلسة المحلية من هذا الجهاز (بياناتك في قاعدة البيانات تبقى محفوظة).<br>ستعود مباشرة إلى صفحة تسجيل الدخول.',
     });
     if (!ok) return;
     try {
@@ -6796,8 +7808,82 @@ const Actions = {
       if (State.shift.active) await Shift.stop();
     } catch { }
     Radar.stop(); Online.toggle(false);
-    localStorage.removeItem(APP.SESSION_KEY);   // نفس سلوك النسخة السابقة
-    location.reload();
+    await Auth.logout();   // يعيد فتح شاشة تسجيل الدخول مباشرة (بدون إعادة تحميل)
+  },
+  'auth-tab': (el) => { Auth.switchTab(el.dataset.tab); haptic('tick'); },
+  'auth-peek': (el) => {
+    const inp = $('#' + (el.dataset.target || '')); if (!inp) return;
+    const show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    el.textContent = show ? '🙈' : '👁️';
+    el.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+  },
+  'auth-guest': () => {
+    openSheet({
+      title: 'وضع التجربة', headIcon: '🧪',
+      body: `<div class="small muted" style="line-height:2;">
+               يفتح التطبيق بحساب تجريبي على جهازك فقط، بدون كتابة أي شيء في قاعدة البيانات.
+               مفيد للتجربة والاستعراض. لتسجيل الخروج من جديد اضغط «المزيد ← تسجيل الخروج».</div>`,
+      foot: `<button class="btn ghost grow" data-sheet-close>إلغاء</button>
+             <button class="btn primary grow" id="btnGoDemo">افتح وضع التجربة ⚡</button>`,
+      onMount: (layer) => {
+        $('#btnGoDemo')?.addEventListener('click', async () => {
+          layer.close();
+          loadSession({ allowDemo: true });
+          State.authed = true;
+          Auth.msg('good', '✓ تم فتح وضع التجربة…');
+          setTimeout(() => location.reload(), 420);
+        });
+      },
+    });
+  },
+  'auth-forgot': () => Auth.openReset(),
+  'auth-theme': () => { Theme.toggle(); const b = $('#authThemeBtn'); if (b) b.textContent = (document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ الوضع النهاري' : '🌙 الوضع الليلي'); },
+  'auth-support': () => { try { window.open(waLink(APP.SUPPORT_PHONE, 'مشكلة في تسجيل الدخول — تطبيق الكابتن'), '_blank', 'noopener'); } catch { location.href = waLink(APP.SUPPORT_PHONE, 'مشكلة في تسجيل الدخول'); } },
+  'open-trip-filters': () => {
+    const body = $('#tripsBody');
+    body?.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => $('#tripsSearch')?.focus({ preventScroll: false }), 240);
+    Toast.info('الفلاتر أعلى القائمة: الفترة ثم الحالة');
+  },
+  'map-zoom-in': () => MapView.zoomBy(1),
+  'map-zoom-out': () => MapView.zoomBy(-1),
+  'toggle-follow': () => {
+    const next = !State.settings.autoRecenter;
+    Settings.save({ autoRecenter: next });
+    MapView.syncFollowBtn();
+    MapView.userInteractedAt = next ? 0 : Date.now() + 1e12;
+    Toast.info(next ? '🧲 التتبع التلقائي يعمل — الخريطة تتمركز مع حركتك' : '🧵 تم إيقاف التتبع — الخريطة تبقى حيث تحرّكها');
+  },
+  'map-style': () => {
+    const cur = State.settings.mapStyle || 'standard';
+    openSheet({
+      title: 'شكل الخريطة', headIcon: '🗺️', subtitle: 'يُطبَّق فورًا ويُحفظ في إعداداتك',
+      body: `<div class="col gap-2">${Object.entries(TILE_LAYERS).map(([k, v]) => `
+          <button class="list-item ${k === cur ? 'on' : ''}" data-tile="${k}" style="${k === cur ? 'border-color:var(--primary);' : ''}">
+            <span class="li-icon ${k === 'dark' ? 'purple' : k === 'light' ? 'cyan' : k === 'satellite' ? 'green' : ''}">${k === 'satellite' ? '🛰️' : k === 'dark' ? '🌑' : k === 'light' ? '☀️' : '🗺️'}</span>
+            <span class="li-body"><span class="li-title">${v.label}</span><span class="li-sub">${k === cur ? 'مُفعّل حاليًا' : 'تبديل إلى هذا النوع'}</span></span>
+            <span class="li-chev">‹</span></button>`).join('')}
+        </div>
+        <div class="hint-txt" style="margin-top:10px;">💡 في الوضع الليلي تُستخدم بلاطات داكنة حقيقية (أوضح وأدق من فلتر عكس الألوان).</div>`,
+      onMount: (layer, el) => {
+        $$('[data-tile]', el).forEach(b => b.addEventListener('click', () => {
+          MapView._cartoDown = false;
+          MapView.setTiles(b.dataset.tile);
+          Toast.info(`نوع الخريطة: ${TILE_LAYERS[b.dataset.tile]?.label || ''}`);
+          layer.close();
+        }));
+      },
+    });
+  },
+  'map-retry': async () => {
+    $('#mapFallback')?.classList.remove('show');
+    MapView._cartoDown = false;
+    MapView.ready = false;
+    Toast.info('جاري إعادة تحميل الخريطة…');
+    const ok = await MapView.init();
+    if (ok) { MapView.updateCar(); Toast.success('تم تحميل الخريطة ✓'); }
+    else Toast.error('تعذّر تحميل الخريطة — تحقّق من الإنترنت أو جرّب شبكة أخرى');
   },
   'shared-focus': (el) => Shared.focus(Number(el.dataset.idx)),
   'shared-picked': (el) => Shared.pickedUp(Number(el.dataset.idx)),
@@ -6825,7 +7911,7 @@ function bindGlobalEvents() {
     if (!el) return;
     const key = el.dataset.setting;
     const value = el.type === 'checkbox' ? el.checked : el.value;
-    if (key === 'mapStyle') { MapView.setTiles(value); Toast.info(`نوع الخريطة: ${TILE_LAYERS[value]?.label || value}`); return; }
+    if (key === 'mapStyle') { MapView._cartoDown = false; MapView.setTiles(value); Toast.info(`نوع الخريطة: ${TILE_LAYERS[value]?.label || value}`); return; }
     if (key === 'navApp') { Settings.save({ navApp: value }); Toast.info(value ? 'سيُفتح تطبيق الملاحة تلقائيًا' : 'سيُعرض اختيار الملاحة كل مرة'); return; }
     Settings.save({ [key]: value });
     haptic('tick');
@@ -6882,8 +7968,14 @@ function bindGlobalEvents() {
   try {
     const ch = new BroadcastChannel('captain_pro_sync');
     ch.onmessage = (e) => {
-      if (e.data?.type === 'session') { State.session = e.data.session; Header.render(); }
-      if (e.data?.type === 'logout') location.reload();
+      if (e.data?.type === 'session') {
+        if (!State.authed) return;                       // خرجنا للتو — لا نقبل جلسة من تبويب آخر
+        State.session = e.data.session; Header.render();
+      }
+      if (e.data?.type === 'logout') {
+        if (!State.authed) return;
+        Auth.logout({ silent: true }); Auth.show('expired');
+      }
     };
     Bus.on('session:changed', (s) => { try { ch.postMessage({ type: 'session', session: s }); } catch { } });
   } catch { }
@@ -6912,6 +8004,8 @@ function bindGlobalEvents() {
   // اختصارات لوحة المفاتيح (لسطح المكتب)
   document.addEventListener('keydown', (e) => {
     if (e.target.matches('input,textarea,select')) return;
+    if (!State.authed) return;                       // لا اختصارات داخل شاشة الدخول
+    if (Layers.count()) return;
     if (e.key === 'o' || e.key === 'O') Online.toggle();
     if (e.key === 'm' || e.key === 'M') Router.go('map');
     if (e.key === 'r' || e.key === 'R') Router.go('reports');
@@ -6954,7 +8048,10 @@ window.openStatsModal = () => Sheets.quickStats();
 window.openZoneModal = () => Sheets.zone();
 window.saveZoneSettings = () => Sheets.saveZone(Layers.top());
 window.saveCaptainProfile = () => Sheets.saveProfile(Layers.top());
-window.logoutCaptain = () => Actions['logout']();
+window.logoutCaptain = async () => { try { localStorage.removeItem(APP.SESSION_KEY); } catch { } await Auth.logout({ silent: true }); Auth.show('logged_out'); };
+window.showLogin = () => { Auth.show(); return true; };
+window.showSignup = () => { Auth.show(); Auth.switchTab('signup'); return true; };
+window.Auth = Auth;
 window.openNavigationChooserModal = () => Sheets.navChooser();
 window.launchNavigationApp = (t) => Navigation.launch(t);
 window.focusSharedPassengerRoute = (i) => Shared.focus(i);
@@ -6971,14 +8068,26 @@ async function boot() {
   try {
     splashStep('تهيئة الإعدادات…');
     Settings.load();
-    loadSession();
+    Theme.apply(Local.raw(APP.THEME_KEY) || State.settings.theme || 'dark');
+    Auth.bind();
+    bindGlobalEvents();                       // أزرار شاشة الدخول تعمل قبل وجود الجلسة
+    const session = loadSession();
+
+    // لا جلسة صالحة ⇒ صفحة تسجيل الدخول / إنشاء الحساب (بدون إنشاء حساب تجريبي تلقائي)
+    if (!session) {
+      splashStep('بانتظار تسجيل الدخول…');
+      $('#splash')?.classList.add('done');
+      setTimeout(() => $('#splash')?.remove(), 620);
+      Auth.show();
+      log.info('لا توجد جلسة — تم فتح شاشة تسجيل الدخول');
+      return;
+    }
+
     resetDailyStats();
     Rollover.check();
-    Theme.apply(Local.raw(APP.THEME_KEY) || State.settings.theme || 'dark');
     Theme.initListener();
     Header.render();
     monitorConnection(navigator.onLine, { initial: true });
-    bindGlobalEvents();
     Shift.restore();
 
     // استعادة البيانات المخزّنة فورًا (عرض لحظي قبل الشبكة)
@@ -7002,6 +8111,7 @@ async function boot() {
     if (dbOk) {
       // مراقبة ملف الكابتن (نفس السلوك السابق: دمج البيانات الواردة في الجلسة)
       DB.watchCaptain((snap) => {
+        if (!State.authed) return;
         if (!snap.exists()) return;
         const remote = snap.data() || {};
         // حماية: لقطة أقدم من آخر حفظ محلي تُهمل حتى لا تمسح عدادات محدَّثة للتو
@@ -7071,7 +8181,8 @@ async function boot() {
     }, 500);
 
     // فحص دوري: تدوير اليوم + تحديث الحالة
-    setInterval(() => {
+    State.bootTimer = setInterval(() => {
+      if (!State.authed) return;
       if (resetDailyStats()) { recalcTodayFromTrips(); Header.render(); }
       Rollover.check();
       if (State.ui.online && DB.ready && Radar.lastSnapAt && Date.now() - Radar.lastSnapAt > 90000) {
@@ -7082,6 +8193,13 @@ async function boot() {
 
   } catch (err) {
     log.error('فشل الإقلاع', String(err?.message || err));
+    if (!State.session) {
+      splashStep('تعذّر الإقلاع — سجّل الدخول للمحاولة مجددًا');
+      $('#splash')?.classList.add('done');
+      setTimeout(() => $('#splash')?.remove(), 620);
+      Auth.show('expired');
+      return;
+    }
     splashStep('حدث خطأ — جاري التشغيل الجزئي');
     $('#splash')?.classList.add('done');
     Toast.error('حدث خطأ أثناء الإقلاع — راجع قسم التشخيص', { duration: 8000 });
